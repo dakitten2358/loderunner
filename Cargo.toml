@@ -7,3 +7,6 @@ edition = "2021"
 
 [dependencies]
 bevy = { git = "https://github.com/bevyengine/bevy", rev = "f991c73bdf2b3fa9ec5987ac5ecce67edafb99dd" }
+serde = {version = "1.0.136", features = ["derive"]}
+serde_json = {version = "1.0.78"}
+anyhow = "1.0.53"
