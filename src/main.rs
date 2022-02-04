@@ -31,7 +31,7 @@ fn main() {
         .insert_resource(AssetServerSettings {
             asset_folder: assets_directory.into_os_string().into_string().unwrap(),
         })
-        .insert_resource(CoreAssets{..Default::default()})
+        .insert_resource(CoreAssets { ..Default::default() })
         .add_plugins(DefaultPlugins)
         .add_plugin(ScalableOrthographicCameraPlugin)
         .add_startup_system(boot.label(Boot))
@@ -73,8 +73,7 @@ fn load_core_assets(
     let texture_handle = asset_server.load("tiles.png");
     let texture_atlas = TextureAtlas::from_grid(texture_handle, Vec2::new(22.0, 20.0), 3, 3);
     let texture_atlas_handle = texture_atlases.add(texture_atlas);
-
-    core_assets.tiles_atlas = texture_atlas_handle.clone();
+    core_assets.tiles_atlas = texture_atlas_handle;
 }
 
 fn setup_test(mut commands: Commands, core_assets: Res<CoreAssets>) {
