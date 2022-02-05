@@ -10,7 +10,7 @@
             "preLaunchTask": "rust: cargo build",
             "request": "launch",
             "program": "${workspaceFolder}/target/debug/loderunner.exe",
-            "args": [],
+            "args": ["-window"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": []

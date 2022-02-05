@@ -169,3 +169,9 @@ impl Progress {
         self.done >= self.total
     }
 }
+
+impl From<Progress> for f32 {
+    fn from(p: Progress) -> f32 {
+        p.done as f32 / p.total as f32
+    }
+}
