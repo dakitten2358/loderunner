@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use super::super::{TILE_SIZE_HEIGHT, TILE_SIZE_WIDTH};
 
 #[derive(Component, Default, Clone)]
 pub struct LocalPlayerInput {}
@@ -12,12 +13,24 @@ pub struct GridTransform {
     pub translation: IVec2,
 }
 
+impl GridTransform {
+	pub fn snap(&self, pos: Vec3) -> Vec3{
+		let p = pos - self.offset;
+        let x = (p.x / TILE_SIZE_WIDTH).round() as i32;
+        let y = (p.y / TILE_SIZE_HEIGHT).round() as i32;
+
+		Vec3::new(x as f32 * TILE_SIZE_WIDTH, y as f32 * TILE_SIZE_HEIGHT, pos.z) + self.offset
+	}
+}
+
 #[derive(Component, Default, Clone)]
 pub struct Movement {
     move_left: bool,
     move_right: bool,
     move_up: bool,
     move_down: bool,
+
+	pub is_falling: bool,
 
     pub velocity: Vec3,
 }

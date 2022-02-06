@@ -7,6 +7,7 @@ use bevy::prelude::*;
 
 const TILE_SIZE_HALF_WIDTH: f32 = TILE_SIZE_WIDTH / 2.0;
 const HORIZONTAL_MOVEMENT_SPEED: f32 = TILE_SIZE_WIDTH * 5.0;
+const FALL_SPEED: f32 = TILE_SIZE_HEIGHT * 5.0;
 
 pub struct GameplayState {}
 pub struct ColliderState {
@@ -105,27 +106,45 @@ pub fn player_input(keyboard_input: Res<Input<KeyCode>>, mut players: Query<&mut
     // burns
 }
 
-pub fn apply_movement(time: Res<Time>, collision_map: Res<ColliderState>, mut query: Query<(&mut Movement, &mut Transform)>) {
-    for (mut movement, mut transform) in query.iter_mut() {
+pub fn apply_movement(time: Res<Time>, collision_map: Res<ColliderState>, mut query: Query<(&mut Movement, &mut Transform, &GridTransform)>) {
+    let delta_time = time.delta().as_secs_f32();
+    for (mut movement, mut transform, grid_transform) in query.iter_mut() {
         let mut desired_position = transform.translation;
 
         let desired_direction = movement.consume();
-
-        // trying to move up, and _can_
-        // trying to move down, and _can
-        // trying to move left
-        if desired_direction.x < 0.0 {
-            desired_position.x -= time.delta().as_secs_f32() * HORIZONTAL_MOVEMENT_SPEED;
+        
+        // if there's nothing under us, we're falling
+        let under_position = transform.translation + Vec3::new(0.0, -TILE_SIZE_HEIGHT / 2.0, 0.0);
+        if !is_overlapping_any_collider(&under_position, &collision_map.colliders) {
+            movement.is_falling = true;
         }
-        // trying to move right
-        else if desired_direction.x > 0.0 {
-            desired_position.x += time.delta().as_secs_f32() * HORIZONTAL_MOVEMENT_SPEED;
+
+        if movement.is_falling
+        {
+            desired_position.y -= delta_time * FALL_SPEED;
+            desired_position.x = grid_transform.snap(desired_position).x;
+        }
+        else
+        {
+            // trying to move up, and _can_
+            // trying to move down, and _can
+            // trying to move left
+            if desired_direction.x < 0.0 {
+                desired_position.x -= delta_time * HORIZONTAL_MOVEMENT_SPEED;
+            }
+            // trying to move right
+            else if desired_direction.x > 0.0 {
+                desired_position.x += delta_time * HORIZONTAL_MOVEMENT_SPEED;
+            }
         }
 
         // overlapping anything?
-        for collider in &collision_map.colliders {
-            if is_overlapping(&desired_position, collider) {
-                desired_position = transform.translation;
+        if is_overlapping_any_collider(&desired_position, &collision_map.colliders) {
+            desired_position = transform.translation;
+
+            if movement.is_falling {
+                movement.is_falling = false;
+                desired_position.y = grid_transform.snap(desired_position).y;
             }
         }
 
@@ -143,6 +162,15 @@ pub fn apply_movement(time: Res<Time>, collision_map: Res<ColliderState>, mut qu
         movement.velocity = velocity;
         transform.translation = desired_position;
     }
+}
+
+fn is_overlapping_any_collider(pos: &Vec3, colliders: &Vec<Vec3>) -> bool {
+    for collider in colliders {
+        if is_overlapping(pos, collider) {
+            return true;
+        }
+    }
+    return false;
 }
 
 fn is_overlapping(a: &Vec3, b: &Vec3) -> bool {
