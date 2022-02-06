@@ -2,19 +2,35 @@ use crate::assets::LevelAsset::*;
 use crate::assets::LevelDataAsset;
 use crate::game::{bundles::*, components::*};
 use crate::CoreAssets;
-use crate::{MAP_SIZE_HALF_WIDTH, TILE_SIZE_HEIGHT, TILE_SIZE_WIDTH};
+use crate::{MAP_SIZE_HALF_WIDTH, MAP_SIZE_HEIGHT, TILE_SIZE_HEIGHT, TILE_SIZE_WIDTH};
 use bevy::prelude::*;
 
 const TILE_SIZE_HALF_WIDTH: f32 = TILE_SIZE_WIDTH / 2.0;
 const HORIZONTAL_MOVEMENT_SPEED: f32 = TILE_SIZE_WIDTH * 5.0;
 
 pub struct GameplayState {}
+pub struct ColliderState {
+    pub colliders: Vec<Vec3>,
+}
 
 pub fn init_gameplay(mut commands: Commands, core_assets: Res<CoreAssets>, level_datas: Res<Assets<LevelDataAsset>>) {
     commands.insert_resource(GameplayState {});
+    commands.insert_resource(ColliderState { colliders: Vec::new() });
 
     let level_data = level_datas.get("levels/debug/debug.level").unwrap();
     spawn_level_entities(&mut commands, core_assets, level_data);
+
+    /*
+    for y in (MAP_SIZE_HEIGHT-1)..0 {
+        let mut tiles_in_row: Vec<&LevelTile> = level_data.tiles.iter().filter(|tile| tile.position.y == y).collect();
+        tiles_in_row.sort_by(|a, b| a.position.x.partial_cmp(&b.position.x).unwrap());
+
+        let mut current_range: Option<std::ops::Range<i32>> = None;
+        for tile in tiles_in_row {
+            //if (tile.behaviour == )
+        }
+    }
+    */
 }
 
 #[derive(Component)]
@@ -62,6 +78,13 @@ pub fn update_grid_transforms(mut query: Query<(&Transform, &mut GridTransform)>
     }
 }
 
+pub fn update_collision_map(mut collision_map: ResMut<ColliderState>, query: Query<&Transform, With<Blocker>>) {
+    collision_map.colliders.clear();
+    for collider_position in query.iter() {
+        collision_map.colliders.push(collider_position.translation);
+    }
+}
+
 pub fn player_input(keyboard_input: Res<Input<KeyCode>>, mut players: Query<&mut Movement, With<LocalPlayerInput>>) {
     // movement
     for mut player_movement in players.iter_mut() {
@@ -82,7 +105,7 @@ pub fn player_input(keyboard_input: Res<Input<KeyCode>>, mut players: Query<&mut
     // burns
 }
 
-pub fn apply_movement(time: Res<Time>, mut query: Query<(&mut Movement, &mut Transform)>) {
+pub fn apply_movement(time: Res<Time>, collision_map: Res<ColliderState>, mut query: Query<(&mut Movement, &mut Transform)>) {
     for (mut movement, mut transform) in query.iter_mut() {
         let mut desired_position = transform.translation;
 
@@ -97,6 +120,13 @@ pub fn apply_movement(time: Res<Time>, mut query: Query<(&mut Movement, &mut Tra
         // trying to move right
         else if desired_direction.x > 0.0 {
             desired_position.x += time.delta().as_secs_f32() * HORIZONTAL_MOVEMENT_SPEED;
+        }
+
+        // overlapping anything?
+        for collider in &collision_map.colliders {
+            if is_overlapping(&desired_position, collider) {
+                desired_position = transform.translation;
+            }
         }
 
         // clamp stuff
@@ -115,9 +145,18 @@ pub fn apply_movement(time: Res<Time>, mut query: Query<(&mut Movement, &mut Tra
     }
 }
 
+fn is_overlapping(a: &Vec3, b: &Vec3) -> bool {
+    is_range_overlapping(a.x, b.x, TILE_SIZE_WIDTH) && is_range_overlapping(a.y, b.y, TILE_SIZE_HEIGHT)
+}
+
+fn is_range_overlapping(a: f32, b: f32, size: f32) -> bool {
+    (b - a).abs() < size
+}
+
 pub fn exit_gameplay(mut commands: Commands, to_despawn: Query<Entity, With<LevelSpecificComponent>>) {
     for entity in to_despawn.iter() {
         commands.entity(entity).despawn_recursive();
     }
     commands.remove_resource::<GameplayState>();
+    commands.remove_resource::<ColliderState>();
 }

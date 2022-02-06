@@ -25,6 +25,7 @@ impl<S: BevyState> Plugin for GameplayPlugin<S> {
         app.add_system_set(
             SystemSet::on_update(self.for_state.clone())
                 .with_system(update_grid_transforms.before(GameplaySystem::Input))
+                .with_system(update_collision_map.before(GameplaySystem::Input))
                 .with_system(player_input.label(GameplaySystem::Input))
                 .with_system(apply_movement.after(GameplaySystem::Input)),
         );

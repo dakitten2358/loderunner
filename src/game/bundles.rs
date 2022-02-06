@@ -8,6 +8,7 @@ pub struct BrickBundle {
     pub transform: Transform,
     pub global_transform: GlobalTransform,
     pub visibility: Visibility,
+    blocker: Blocker,
 }
 
 impl BrickBundle {

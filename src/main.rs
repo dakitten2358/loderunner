@@ -16,6 +16,7 @@ pub const TILE_PADDING_WIDTH: f32 = 3.0;
 pub const TILE_PADDING_HEIGHT: f32 = 3.0;
 pub const MAP_SIZE_WIDTH: i32 = 28;
 pub const MAP_SIZE_HALF_WIDTH: i32 = MAP_SIZE_WIDTH / 2;
+pub const MAP_SIZE_HEIGHT: i32 = 16;
 
 pub trait BevyState: Component + Debug + Clone + Eq + Hash {}
 impl<T: Component + Debug + Clone + Eq + Hash> BevyState for T {}
