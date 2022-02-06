@@ -141,7 +141,7 @@ impl PlayerBundle {
             texture_atlas: texture.clone(),
             transform: Transform::from_scale(Vec3::splat(1.0)).with_translation(position),
             grid_transform: GridTransform {
-                offset: offset,
+                offset,
                 ..Default::default()
             },
             ..Default::default()

@@ -13,7 +13,6 @@ use gameplay::*;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, SystemLabel)]
 pub enum GameplaySystem {
     Input,
-    Post,
 }
 
 pub struct GameplayPlugin<S: BevyState> {

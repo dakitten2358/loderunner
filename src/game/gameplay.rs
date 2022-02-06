@@ -91,11 +91,11 @@ pub fn apply_movement(time: Res<Time>, mut query: Query<(&mut Movement, &mut Tra
         // trying to move up, and _can_
         // trying to move down, and _can
         // trying to move left
-        if (desired_direction.x < 0.0) {
+        if desired_direction.x < 0.0 {
             desired_position.x -= time.delta().as_secs_f32() * HORIZONTAL_MOVEMENT_SPEED;
         }
         // trying to move right
-        else if (desired_direction.x > 0.0) {
+        else if desired_direction.x > 0.0 {
             desired_position.x += time.delta().as_secs_f32() * HORIZONTAL_MOVEMENT_SPEED;
         }
 

@@ -32,7 +32,7 @@ pub struct LevelTile {
 impl LevelTile {
     pub fn new(tile_type: TileType, position: IVec2) -> Self {
         Self {
-            position: position,
+            position,
             behaviour: tile_type,
         }
     }
@@ -58,14 +58,13 @@ impl AssetLoader for LevelDataAssetLoader {
     fn load<'a>(&'a self, bytes: &'a [u8], load_context: &'a mut LoadContext) -> BoxedFuture<'a, Result<(), anyhow::Error>> {
         Box::pin(async move {
             //std::thread::sleep(std::time::Duration::from_millis(4000));
-            let loaded_data = serde_json::de::from_slice::<LevelDataDiskAsset>(&bytes)?;
+            let loaded_data = serde_json::de::from_slice::<LevelDataDiskAsset>(bytes)?;
             let mut level_data = LevelDataAsset::new();
 
             let mut y = loaded_data.rows.len() as i32 - 1;
-            for row in &loaded_data.rows {
-                let mut x = 0;
-                for ch in row.chars() {
-                    let p = IVec2::new(x, y);
+            for row_data in &loaded_data.rows {
+                for (x, ch) in row_data.chars().enumerate() {
+                    let p = IVec2::new(x as i32, y);
 
                     match ch {
                         '#' => level_data.tiles.push(LevelTile::new(TileType::Brick, p)),
@@ -82,8 +81,6 @@ impl AssetLoader for LevelDataAssetLoader {
                             println!("WARNING:  unexpected tile type: {} found!", ch);
                         }
                     }
-
-                    x += 1;
                 }
                 y -= 1;
             }

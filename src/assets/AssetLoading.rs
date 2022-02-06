@@ -75,7 +75,7 @@ fn assets_progress(mut loading: ResMut<AssetsLoading>, server: Res<AssetServer>)
 }
 
 pub fn track<Params, S: IntoSystem<(), Progress, Params>>(s: S) -> ParallelSystemDescriptor {
-    s.chain(tracker).before(LoadingLabel::Post).after(LoadingLabel::Pre).into()
+    s.chain(tracker).before(LoadingLabel::Post).after(LoadingLabel::Pre)
 }
 
 fn tracker(In(progress): In<Progress>, counter: Res<ProgressCounter>) {

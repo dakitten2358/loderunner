@@ -2,7 +2,7 @@ mod assets;
 mod camera;
 mod game;
 
-use assets::{AssetLoading::ProgressCounter, AssetsLoading, LevelDataAsset, LevelDataAssetPlugin, LoadingPlugin};
+use assets::{AssetLoading::ProgressCounter, AssetsLoading, LevelDataAssetPlugin, LoadingPlugin};
 use bevy::asset::Handle;
 use bevy::{asset::AssetServerSettings, prelude::*};
 use camera::*;

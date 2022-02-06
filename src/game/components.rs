@@ -62,6 +62,6 @@ impl Movement {
         self.move_up = false;
         self.move_down = false;
 
-        return directions;
+        directions
     }
 }
