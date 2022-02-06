@@ -60,7 +60,8 @@ fn assets_progress(mut loading: ResMut<AssetsLoading>, server: Res<AssetServer>)
     // TODO: avoid this temporary vec (HashSet::drain_filter is in Rust nightly)
     let mut done = vec![];
     for handle in loading.handles.iter() {
-        if server.get_load_state(*handle) != LoadState::Loading {
+        let load_state = server.get_load_state(*handle);
+        if load_state != LoadState::Loading && load_state != LoadState::NotLoaded {
             done.push(*handle);
         }
     }

@@ -2,6 +2,7 @@ mod assets;
 mod camera;
 mod game;
 
+use assets::LevelDataAsset;
 use assets::{AssetLoading::ProgressCounter, AssetsLoading, LevelDataAssetPlugin, LoadingPlugin};
 use bevy::asset::Handle;
 use bevy::{asset::AssetServerSettings, prelude::*};
@@ -37,6 +38,8 @@ pub struct CoreAssets {
     pub tiles_atlas: Handle<TextureAtlas>,
     pub guard_atlas: Handle<TextureAtlas>,
     pub runner_atlas: Handle<TextureAtlas>,
+
+    pub map_handles: Vec<Handle<LevelDataAsset>>,
 }
 
 #[derive(Component)]
@@ -121,7 +124,6 @@ fn load_core_assets(
         Vec2::new(TILE_PADDING_WIDTH, TILE_PADDING_HEIGHT),
     );
     let texture_atlas_handle = texture_atlases.add(texture_atlas);
-    loading.add(&texture_atlas_handle);
     core_assets.tiles_atlas = texture_atlas_handle;
 
     // guard
@@ -129,7 +131,6 @@ fn load_core_assets(
     loading.add(&guard_texture_handle);
     let guard_texture_atlas = TextureAtlas::from_grid(guard_texture_handle, Vec2::new(20.0, 22.0), 11, 2);
     let guard_texture_atlas_handle = texture_atlases.add(guard_texture_atlas);
-    loading.add(&guard_texture_atlas_handle);
     core_assets.guard_atlas = guard_texture_atlas_handle;
 
     // runner
@@ -137,11 +138,12 @@ fn load_core_assets(
     loading.add(&runner_texture_handle);
     let runner_texture_atlas = TextureAtlas::from_grid(runner_texture_handle, Vec2::new(20.0, 22.0), 10, 2);
     let runner_texture_atlas_handle = texture_atlases.add(runner_texture_atlas);
-    loading.add(&runner_texture_atlas_handle);
     core_assets.runner_atlas = runner_texture_atlas_handle;
 
+    // load all the maps
     for level_data_handle in asset_server.load_folder("levels").expect("failed to load levels") {
         loading.add(&level_data_handle);
+        core_assets.map_handles.push(level_data_handle.typed());
     }
 }
 

@@ -10,3 +10,4 @@ bevy = { git = "https://github.com/bevyengine/bevy", rev = "f991c73bdf2b3fa9ec59
 serde = {version = "1.0.136", features = ["derive"]}
 serde_json = {version = "1.0.78"}
 anyhow = "1.0.53"
+rand = "0.8.4"

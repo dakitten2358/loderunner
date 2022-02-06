@@ -57,7 +57,8 @@ pub struct LevelDataAssetLoader;
 impl AssetLoader for LevelDataAssetLoader {
     fn load<'a>(&'a self, bytes: &'a [u8], load_context: &'a mut LoadContext) -> BoxedFuture<'a, Result<(), anyhow::Error>> {
         Box::pin(async move {
-            //std::thread::sleep(std::time::Duration::from_millis(4000));
+            // random sleep for testing the loading screen
+            //std::thread::sleep(std::time::Duration::from_millis((1+(rand::random::<u64>() % 24)) * 1000));
             let loaded_data = serde_json::de::from_slice::<LevelDataDiskAsset>(bytes)?;
             let mut level_data = LevelDataAsset::new();
 
