@@ -14,9 +14,7 @@ pub struct LevelDataAsset {
 
 impl LevelDataAsset {
     pub fn new() -> Self {
-        Self {
-            tiles: Vec::new(),
-        }
+        Self { tiles: Vec::new() }
     }
 }
 
@@ -32,7 +30,7 @@ pub struct LevelTile {
 }
 
 impl LevelTile {
-    pub fn new(tile_type: TileType, position: IVec2) -> Self{
+    pub fn new(tile_type: TileType, position: IVec2) -> Self {
         Self {
             position: position,
             behaviour: tile_type,
@@ -63,7 +61,7 @@ impl AssetLoader for LevelDataAssetLoader {
             let loaded_data = serde_json::de::from_slice::<LevelDataDiskAsset>(&bytes)?;
             let mut level_data = LevelDataAsset::new();
 
-            let mut y = loaded_data.rows.len() as i32 -1;
+            let mut y = loaded_data.rows.len() as i32 - 1;
             for row in &loaded_data.rows {
                 let mut x = 0;
                 for ch in row.chars() {
@@ -79,9 +77,10 @@ impl AssetLoader for LevelDataAssetLoader {
                         '$' => level_data.tiles.push(LevelTile::new(TileType::Gold, p)),
                         '0' => level_data.tiles.push(LevelTile::new(TileType::Guard, p)),
                         '&' => level_data.tiles.push(LevelTile::new(TileType::Player, p)),
+                        ' ' => {}
                         _ => {
                             println!("WARNING:  unexpected tile type: {} found!", ch);
-                        },
+                        }
                     }
 
                     x += 1;

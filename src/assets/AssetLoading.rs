@@ -1,3 +1,4 @@
+use crate::BevyState;
 use bevy::asset::{HandleId, LoadState};
 use bevy::ecs::schedule::ParallelSystemDescriptor;
 use bevy::prelude::*;
@@ -5,9 +6,6 @@ use bevy::utils::HashSet;
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::sync::atomic::{AtomicU32, Ordering};
-
-pub trait BevyState: Component + Debug + Clone + Eq + Hash {}
-impl<T: Component + Debug + Clone + Eq + Hash> BevyState for T {}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, SystemLabel)]
 pub enum LoadingLabel {

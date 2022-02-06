@@ -5,11 +5,30 @@ pub mod components;
 pub use bundles::*;
 pub use components::*;
 
-pub fn test_input(keyboard_input: Res<Input<KeyCode>>, gamepads: Res<Gamepads>, axes: Res<Axis<GamepadAxis>>, mut players: Query<&mut Transform, With<LocalPlayerInput>>) {
-	if keyboard_input.pressed(KeyCode::D)
-	{
-		for mut player in players.iter_mut() {
-			player.translation = player.translation + Vec3::new(1.0, 0.0,0.0);
-		}
-	}
+mod gameplay;
+
+use crate::BevyState;
+use gameplay::*;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, SystemLabel)]
+pub enum GameplaySystem {
+    Input,
+    Post,
+}
+
+pub struct GameplayPlugin<S: BevyState> {
+    pub for_state: S,
+}
+
+impl<S: BevyState> Plugin for GameplayPlugin<S> {
+    fn build(&self, app: &mut App) {
+        app.add_system_set(SystemSet::on_enter(self.for_state.clone()).with_system(init_gameplay));
+        app.add_system_set(
+            SystemSet::on_update(self.for_state.clone())
+                .with_system(update_grid_transforms.before(GameplaySystem::Input))
+                .with_system(player_input.label(GameplaySystem::Input))
+                .with_system(apply_movement.after(GameplaySystem::Input)),
+        );
+        app.add_system_set(SystemSet::on_exit(self.for_state.clone()).with_system(exit_gameplay));
+    }
 }

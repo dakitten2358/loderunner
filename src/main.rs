@@ -2,19 +2,22 @@ mod assets;
 mod camera;
 mod game;
 
-use assets::LevelAsset::TileType;
 use assets::{AssetLoading::ProgressCounter, AssetsLoading, LevelDataAsset, LevelDataAssetPlugin, LoadingPlugin};
 use bevy::asset::Handle;
 use bevy::{asset::AssetServerSettings, prelude::*};
 use camera::*;
-use game::bundles::*;
+use std::fmt::Debug;
+use std::hash::Hash;
 
-const TILE_SIZE_WIDTH: f32 = 20.0;
-const TILE_SIZE_HEIGHT: f32 = 22.0;
-const TILE_PADDING_WIDTH: f32 = 3.0;
-const TILE_PADDING_HEIGHT: f32 = 3.0;
-const MAP_SIZE_WIDTH: i32 = 28;
-const MAP_SIZE_HALF_WIDTH: i32 = MAP_SIZE_WIDTH / 2;
+pub const TILE_SIZE_WIDTH: f32 = 20.0;
+pub const TILE_SIZE_HEIGHT: f32 = 22.0;
+pub const TILE_PADDING_WIDTH: f32 = 3.0;
+pub const TILE_PADDING_HEIGHT: f32 = 3.0;
+pub const MAP_SIZE_WIDTH: i32 = 28;
+pub const MAP_SIZE_HALF_WIDTH: i32 = MAP_SIZE_WIDTH / 2;
+
+pub trait BevyState: Component + Debug + Clone + Eq + Hash {}
+impl<T: Component + Debug + Clone + Eq + Hash> BevyState for T {}
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Component)]
 pub enum AppStates {
@@ -56,6 +59,9 @@ fn main() {
     if args.contains(&String::from("-window")) {
         window_descriptor.mode = bevy::window::WindowMode::Windowed;
     }
+    if args.contains(&String::from("-fulllscreen")) {
+        window_descriptor.mode = bevy::window::WindowMode::Fullscreen;
+    }
 
     let assets_directory = get_assets_directory();
     let mut app_builder = App::new();
@@ -82,28 +88,9 @@ fn main() {
         )
         .add_system_set(SystemSet::on_update(InitialLoading).with_system(core_asset_loading))
         .add_system_set(SystemSet::on_exit(InitialLoading).with_system(core_asset_loading_onexit))
-        .add_system_set(SystemSet::on_enter(Testing).with_system(setup_test))
-        .add_system_set(
-            SystemSet::on_update(Testing)
-                .with_system(animate_sprite_system)
-                .with_system(game::test_input)
-        );
+        .add_plugin(game::GameplayPlugin { for_state: Testing });
 
     app_builder.run();
-}
-
-fn animate_sprite_system(
-    time: Res<Time>,
-    texture_atlases: Res<Assets<TextureAtlas>>,
-    mut query: Query<(&mut AnimationTimer, &mut TextureAtlasSprite, &Handle<TextureAtlas>)>,
-) {
-    for (mut timer, mut sprite, texture_atlas_handle) in query.iter_mut() {
-        timer.0.tick(time.delta());
-        if timer.0.finished() {
-            let texture_atlas = texture_atlases.get(texture_atlas_handle).unwrap();
-            sprite.index = (sprite.index + 1) % texture_atlas.textures.len();
-        }
-    }
 }
 
 fn get_assets_directory() -> std::path::PathBuf {
@@ -153,8 +140,9 @@ fn load_core_assets(
     loading.add(&runner_texture_atlas_handle);
     core_assets.runner_atlas = runner_texture_atlas_handle;
 
-    let level_data_handle: Handle<LevelDataAsset> = asset_server.load("levels/classic/001.level");
-    loading.add(&level_data_handle);
+    for level_data_handle in asset_server.load_folder("levels").expect("failed to load levels") {
+        loading.add(&level_data_handle);
+    }
 }
 
 #[derive(Component)]
@@ -196,41 +184,5 @@ fn core_asset_loading(counter: Res<ProgressCounter>, mut progress_bars: Query<&m
 fn core_asset_loading_onexit(mut commands: Commands, to_despawn: Query<Entity, With<LoadingScreenComponent>>) {
     for entity in to_despawn.iter() {
         commands.entity(entity).despawn_recursive();
-    }
-}
-
-fn setup_test(commands: Commands, core_assets: Res<CoreAssets>, level_datas: Res<Assets<LevelDataAsset>>) {
-    let level_data = level_datas.get("levels/classic/001.level").unwrap();
-    spawn_level_entities(commands, core_assets, level_data);
-}
-
-#[derive(Component)]
-pub struct LevelSpecificComponent;
-
-fn spawn_level_entities(mut commands: Commands, core_assets: Res<CoreAssets>, level_data: &LevelDataAsset) {
-    let tiles_atlas = &core_assets.tiles_atlas;
-    let guard_atlas = &core_assets.guard_atlas;
-    let runner_atlas = &core_assets.runner_atlas;
-
-    let level_offset = Vec3::new(MAP_SIZE_HALF_WIDTH as f32 * TILE_SIZE_WIDTH * -1.0, TILE_SIZE_HEIGHT / 2.0, 0.0);
-    for tile in &level_data.tiles {
-        let pos = Vec3::new(
-            tile.position.x as f32 * TILE_SIZE_WIDTH,
-            tile.position.y as f32 * TILE_SIZE_HEIGHT,
-            0.0,
-        ) + level_offset;
-
-        match tile.behaviour {
-            TileType::Brick => commands.spawn_bundle(BrickBundle::new(tiles_atlas, pos)),
-            TileType::FalseBrick => commands.spawn_bundle(FalseBrickBundle::new(tiles_atlas, pos)),
-            TileType::Gold => commands.spawn_bundle(GoldBundle::new(tiles_atlas, pos)),
-            TileType::Guard => commands.spawn_bundle(GuardBundle::new(guard_atlas, pos)),
-            TileType::HiddenLadder => commands.spawn_bundle(HiddenLadderBundle::new(tiles_atlas, pos)),
-            TileType::Ladder => commands.spawn_bundle(LadderBundle::new(tiles_atlas, pos)),
-            TileType::Player => commands.spawn_bundle(PlayerBundle::new(runner_atlas, pos)),
-            TileType::Rope => commands.spawn_bundle(RopeBundle::new(tiles_atlas, pos)),
-            TileType::SolidBrick => commands.spawn_bundle(SolidBrickBundle::new(tiles_atlas, pos)),
-        }
-        .insert(LevelSpecificComponent);
     }
 }
