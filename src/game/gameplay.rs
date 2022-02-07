@@ -5,9 +5,9 @@ use crate::CoreAssets;
 use crate::{MAP_SIZE_HALF_WIDTH, TILE_SIZE_HEIGHT, TILE_SIZE_WIDTH};
 use bevy::prelude::*;
 
-const HORIZONTAL_MOVEMENT_SPEED: f32 = TILE_SIZE_WIDTH * 5.0;
-const FALL_SPEED: f32 = TILE_SIZE_HEIGHT * 5.0;
-const CLIMB_SPEED: f32 = TILE_SIZE_HEIGHT * 5.0;
+const HORIZONTAL_MOVEMENT_SPEED: f32 = TILE_SIZE_WIDTH * 7.0;
+const FALL_SPEED: f32 = TILE_SIZE_HEIGHT * 7.0;
+const CLIMB_SPEED: f32 = TILE_SIZE_HEIGHT * 7.0;
 
 pub fn init_gameplay(mut commands: Commands, core_assets: Res<CoreAssets>, level_datas: Res<Assets<LevelDataAsset>>) {
     let level_data = level_datas.get("levels/debug/debug.level").unwrap();
@@ -152,7 +152,8 @@ pub fn apply_movement(time: Res<Time>, level: Res<LevelResource>, mut query: Que
         }
         // trying to move down ladder, and _can
         else if desired_direction.y < 0.0
-            && (tiles.on.behaviour == Ladder || (tiles.on.behaviour == None && tiles.below.behaviour == Ladder))
+            && (tiles.on.behaviour == Ladder
+                || ((tiles.on.behaviour == None || tiles.on.behaviour == Rope) && tiles.below.behaviour == Ladder))
         {
             let mut desired_movement = delta_time * CLIMB_SPEED;
 
@@ -184,7 +185,21 @@ pub fn apply_movement(time: Res<Time>, level: Res<LevelResource>, mut query: Que
 
             desired_position.x -= desired_movement;
             if tiles.on.behaviour != Ladder {
-                desired_position.y = grid_transform.snap(desired_position).y;
+                //desired_position.y = grid_transform.snap(desired_position).y;
+                let snapped_y = grid_transform.snap(desired_position).y;
+                let direction = if (snapped_y - desired_position.y) > 0.0 {
+                    1.0
+                } else if (snapped_y - desired_position.y) < 0.0 {
+                    -1.0
+                } else {
+                    0.0
+                };
+
+                let mut vert_move_amount = delta_time * HORIZONTAL_MOVEMENT_SPEED * direction;
+                if (snapped_y - desired_position.y).abs() < vert_move_amount.abs() {
+                    vert_move_amount = snapped_y - desired_position.y;
+                }
+                desired_position.y += vert_move_amount;
             }
         }
         // trying to move right
@@ -203,7 +218,21 @@ pub fn apply_movement(time: Res<Time>, level: Res<LevelResource>, mut query: Que
             desired_position.x += desired_movement;
 
             if tiles.on.behaviour != Ladder {
-                desired_position.y = grid_transform.snap(desired_position).y;
+                //desired_position.y = grid_transform.snap(desired_position).y;
+                let snapped_y = grid_transform.snap(desired_position).y;
+                let direction = if (snapped_y - desired_position.y) > 0.0 {
+                    1.0
+                } else if (snapped_y - desired_position.y) < 0.0 {
+                    -1.0
+                } else {
+                    0.0
+                };
+
+                let mut vert_move_amount = delta_time * HORIZONTAL_MOVEMENT_SPEED * direction;
+                if (snapped_y - desired_position.y).abs() < vert_move_amount.abs() {
+                    vert_move_amount = snapped_y - desired_position.y;
+                }
+                desired_position.y += vert_move_amount;
             }
         }
 
