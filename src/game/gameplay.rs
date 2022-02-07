@@ -93,7 +93,7 @@ pub fn apply_movement(time: Res<Time>, level: Res<LevelResource>, mut query: Que
         // should we start falling?
         if !movement.is_falling() && tiles.below.behaviour == None && tiles.on.behaviour != Rope {
             movement.start_falling(grid_transform.translation);
-            desired_position.x = grid_transform.snap(desired_position).x;
+            
         } else if !movement.is_falling() && tiles.on.behaviour == None && tiles.below.behaviour == Rope {
             movement.start_falling(grid_transform.translation);
         } else if movement.is_falling() {
@@ -108,7 +108,17 @@ pub fn apply_movement(time: Res<Time>, level: Res<LevelResource>, mut query: Que
                     desired_movement = f32::min(movable_distance, desired_movement)
                 }
             }
+
             desired_position.y -= desired_movement;
+
+            let snapped_x = grid_transform.snap(desired_position).x;
+            let direction = if (snapped_x - desired_position.x) > 0.0 { 1.0 } else if (snapped_x - desired_position.x) < 0.0 { -1.0 } else {0.0};
+
+            let mut horiz_move_amount = delta_time * FALL_SPEED * direction;
+            if (snapped_x - desired_position.x).abs() < horiz_move_amount.abs() {
+                horiz_move_amount = snapped_x - desired_position.x;
+            }
+            desired_position.x += horiz_move_amount;
         }
         // dropping from rope?
         else if desired_direction.y < 0.0 && tiles.on.behaviour == Rope && tiles.below.behaviour == None {
