@@ -1,17 +1,15 @@
 use bevy::prelude::*;
 
-pub mod bundles;
-pub mod components;
-pub mod resources;
-
-pub use bundles::*;
-pub use components::*;
-pub use resources::*;
+mod bundles;
+mod components;
+mod resources;
 
 mod gameplay;
+mod movement;
 
 use crate::BevyState;
 use gameplay::*;
+use movement::apply_movement;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, SystemLabel)]
 pub enum GameplaySystem {
