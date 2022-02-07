@@ -93,7 +93,6 @@ pub fn apply_movement(time: Res<Time>, level: Res<LevelResource>, mut query: Que
         // should we start falling?
         if !movement.is_falling() && tiles.below.behaviour == None && tiles.on.behaviour != Rope {
             movement.start_falling(grid_transform.translation);
-            
         } else if !movement.is_falling() && tiles.on.behaviour == None && tiles.below.behaviour == Rope {
             movement.start_falling(grid_transform.translation);
         } else if movement.is_falling() {
@@ -112,7 +111,13 @@ pub fn apply_movement(time: Res<Time>, level: Res<LevelResource>, mut query: Que
             desired_position.y -= desired_movement;
 
             let snapped_x = grid_transform.snap(desired_position).x;
-            let direction = if (snapped_x - desired_position.x) > 0.0 { 1.0 } else if (snapped_x - desired_position.x) < 0.0 { -1.0 } else {0.0};
+            let direction = if (snapped_x - desired_position.x) > 0.0 {
+                1.0
+            } else if (snapped_x - desired_position.x) < 0.0 {
+                -1.0
+            } else {
+                0.0
+            };
 
             let mut horiz_move_amount = delta_time * FALL_SPEED * direction;
             if (snapped_x - desired_position.x).abs() < horiz_move_amount.abs() {
@@ -178,7 +183,9 @@ pub fn apply_movement(time: Res<Time>, level: Res<LevelResource>, mut query: Que
             }
 
             desired_position.x -= desired_movement;
-            desired_position.y = grid_transform.snap(desired_position).y;
+            if tiles.on.behaviour != Ladder {
+                desired_position.y = grid_transform.snap(desired_position).y;
+            }
         }
         // trying to move right
         else if desired_direction.x > 0.0 {
@@ -194,7 +201,10 @@ pub fn apply_movement(time: Res<Time>, level: Res<LevelResource>, mut query: Que
             }
 
             desired_position.x += desired_movement;
-            desired_position.y = grid_transform.snap(desired_position).y;
+
+            if tiles.on.behaviour != Ladder {
+                desired_position.y = grid_transform.snap(desired_position).y;
+            }
         }
 
         // feed velocity back into movement
