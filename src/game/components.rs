@@ -1,5 +1,5 @@
-use bevy::prelude::*;
 use super::super::{TILE_SIZE_HEIGHT, TILE_SIZE_WIDTH};
+use bevy::prelude::*;
 
 #[derive(Component, Default, Clone)]
 pub struct LocalPlayerInput {}
@@ -14,13 +14,20 @@ pub struct GridTransform {
 }
 
 impl GridTransform {
-	pub fn snap(&self, pos: Vec3) -> Vec3{
-		let p = pos - self.offset;
+    pub fn snap(&self, pos: Vec3) -> Vec3 {
+        let p = pos - self.offset;
         let x = (p.x / TILE_SIZE_WIDTH).round() as i32;
         let y = (p.y / TILE_SIZE_HEIGHT).round() as i32;
 
-		Vec3::new(x as f32 * TILE_SIZE_WIDTH, y as f32 * TILE_SIZE_HEIGHT, pos.z) + self.offset
-	}
+        Vec3::new(x as f32 * TILE_SIZE_WIDTH, y as f32 * TILE_SIZE_HEIGHT, pos.z) + self.offset
+    }
+
+    pub fn to_world(&self, pos: IVec2) -> Vec3 {
+        let x = pos.x as f32 * TILE_SIZE_WIDTH;
+        let y = pos.y as f32 * TILE_SIZE_HEIGHT;
+
+        Vec3::new(x, y, 0.0) + self.offset
+    }
 }
 
 #[derive(Component, Default, Clone)]
@@ -30,7 +37,8 @@ pub struct Movement {
     move_up: bool,
     move_down: bool,
 
-	pub is_falling: bool,
+    is_falling: bool,
+    start_fall_position: IVec2,
 
     pub velocity: Vec3,
 }
@@ -50,6 +58,23 @@ impl Movement {
 
     pub fn add_move_down(&mut self) {
         self.move_down = true;
+    }
+
+    pub fn start_falling(&mut self, start_pos: IVec2) {
+        self.is_falling = true;
+        self.start_fall_position = start_pos;
+    }
+
+    pub fn is_falling(&self) -> bool {
+        self.is_falling
+    }
+
+    pub fn fall_start_pos(&self) -> IVec2 {
+        self.start_fall_position
+    }
+
+    pub fn stop_falling(&mut self) {
+        self.is_falling = false;
     }
 
     pub fn consume(&mut self) -> Vec2 {

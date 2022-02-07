@@ -6,15 +6,29 @@ use bevy::{
 };
 use serde::Deserialize;
 
+use crate::{MAP_SIZE_HEIGHT, MAP_SIZE_WIDTH};
+
 #[derive(Debug, TypeUuid)]
 #[uuid = "4b05438e-39d9-4b57-9a3a-061ed489b5c9"]
 pub struct LevelDataAsset {
     pub tiles: Vec<LevelTile>,
+    pub width: i32,
+    pub height: i32,
 }
 
 impl LevelDataAsset {
     pub fn new() -> Self {
-        Self { tiles: Vec::new() }
+        Self {
+            tiles: Vec::new(),
+            width: 0,
+            height: 0,
+        }
+    }
+}
+
+impl Default for LevelDataAsset {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -38,7 +52,7 @@ impl LevelTile {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum TileType {
     Brick,
     SolidBrick,
@@ -61,6 +75,8 @@ impl AssetLoader for LevelDataAssetLoader {
             //std::thread::sleep(std::time::Duration::from_millis((1+(rand::random::<u64>() % 24)) * 1000));
             let loaded_data = serde_json::de::from_slice::<LevelDataDiskAsset>(bytes)?;
             let mut level_data = LevelDataAsset::new();
+            level_data.width = MAP_SIZE_WIDTH;
+            level_data.height = MAP_SIZE_HEIGHT;
 
             let mut y = loaded_data.rows.len() as i32 - 1;
             for row_data in &loaded_data.rows {

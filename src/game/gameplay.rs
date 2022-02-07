@@ -1,37 +1,18 @@
 use crate::assets::LevelAsset::*;
 use crate::assets::LevelDataAsset;
-use crate::game::{bundles::*, components::*};
+use crate::game::{bundles::*, components::*, resources::*};
 use crate::CoreAssets;
-use crate::{MAP_SIZE_HALF_WIDTH, MAP_SIZE_HEIGHT, TILE_SIZE_HEIGHT, TILE_SIZE_WIDTH};
+use crate::{MAP_SIZE_HALF_WIDTH, TILE_SIZE_HEIGHT, TILE_SIZE_WIDTH};
 use bevy::prelude::*;
 
-const TILE_SIZE_HALF_WIDTH: f32 = TILE_SIZE_WIDTH / 2.0;
 const HORIZONTAL_MOVEMENT_SPEED: f32 = TILE_SIZE_WIDTH * 5.0;
 const FALL_SPEED: f32 = TILE_SIZE_HEIGHT * 5.0;
-
-pub struct GameplayState {}
-pub struct ColliderState {
-    pub colliders: Vec<Vec3>,
-}
+const CLIMB_SPEED: f32 = TILE_SIZE_HEIGHT * 5.0;
 
 pub fn init_gameplay(mut commands: Commands, core_assets: Res<CoreAssets>, level_datas: Res<Assets<LevelDataAsset>>) {
-    commands.insert_resource(GameplayState {});
-    commands.insert_resource(ColliderState { colliders: Vec::new() });
-
     let level_data = level_datas.get("levels/debug/debug.level").unwrap();
     spawn_level_entities(&mut commands, core_assets, level_data);
-
-    /*
-    for y in (MAP_SIZE_HEIGHT-1)..0 {
-        let mut tiles_in_row: Vec<&LevelTile> = level_data.tiles.iter().filter(|tile| tile.position.y == y).collect();
-        tiles_in_row.sort_by(|a, b| a.position.x.partial_cmp(&b.position.x).unwrap());
-
-        let mut current_range: Option<std::ops::Range<i32>> = None;
-        for tile in tiles_in_row {
-            //if (tile.behaviour == )
-        }
-    }
-    */
+    commands.insert_resource(LevelResource::from_asset(level_data))
 }
 
 #[derive(Component)]
@@ -79,13 +60,6 @@ pub fn update_grid_transforms(mut query: Query<(&Transform, &mut GridTransform)>
     }
 }
 
-pub fn update_collision_map(mut collision_map: ResMut<ColliderState>, query: Query<&Transform, With<Blocker>>) {
-    collision_map.colliders.clear();
-    for collider_position in query.iter() {
-        collision_map.colliders.push(collider_position.translation);
-    }
-}
-
 pub fn player_input(keyboard_input: Res<Input<KeyCode>>, mut players: Query<&mut Movement, With<LocalPlayerInput>>) {
     // movement
     for mut player_movement in players.iter_mut() {
@@ -106,55 +80,111 @@ pub fn player_input(keyboard_input: Res<Input<KeyCode>>, mut players: Query<&mut
     // burns
 }
 
-pub fn apply_movement(time: Res<Time>, collision_map: Res<ColliderState>, mut query: Query<(&mut Movement, &mut Transform, &GridTransform)>) {
+pub fn apply_movement(time: Res<Time>, level: Res<LevelResource>, mut query: Query<(&mut Movement, &mut Transform, &GridTransform)>) {
+    use EffectiveTileType::*;
+
     let delta_time = time.delta().as_secs_f32();
     for (mut movement, mut transform, grid_transform) in query.iter_mut() {
         let mut desired_position = transform.translation;
+        let tiles = level.around(grid_transform.translation);
 
         let desired_direction = movement.consume();
-        
-        // if there's nothing under us, we're falling
-        let under_position = transform.translation + Vec3::new(0.0, -TILE_SIZE_HEIGHT / 2.0, 0.0);
-        if !is_overlapping_any_collider(&under_position, &collision_map.colliders) {
-            movement.is_falling = true;
-        }
 
-        if movement.is_falling
+        // should we start falling?
+        if !movement.is_falling() && tiles.below.behaviour == None && tiles.on.behaviour != Rope {
+            movement.start_falling(grid_transform.translation);
+            desired_position.x = grid_transform.snap(desired_position).x;
+        } else if !movement.is_falling() && tiles.on.behaviour == None && tiles.below.behaviour == Rope {
+            movement.start_falling(grid_transform.translation);
+        } else if movement.is_falling() {
+            let mut desired_movement = delta_time * FALL_SPEED;
+            if tiles.below.behaviour == Blocker || (tiles.on.behaviour == Rope && tiles.on.pos != movement.fall_start_pos()) {
+                let blocking_tile_y = grid_transform.to_world(tiles.below.pos).y;
+                let (is_overlapping, movable_distance) = is_range_overlapping(blocking_tile_y, desired_position.y, TILE_SIZE_HEIGHT);
+                if is_overlapping {
+                    desired_movement = 0.0;
+                    movement.stop_falling();
+                } else {
+                    desired_movement = f32::min(movable_distance, desired_movement)
+                }
+            }
+            desired_position.y -= desired_movement;
+        }
+        // dropping from rope?
+        else if desired_direction.y < 0.0 && tiles.on.behaviour == Rope && tiles.below.behaviour == None {
+            movement.start_falling(grid_transform.translation);
+        }
+        // top of ladder?
+        else if desired_direction.y > 0.0 && (tiles.on.behaviour == None || tiles.on.behaviour == Rope) && tiles.below.behaviour == Ladder
         {
-            desired_position.y -= delta_time * FALL_SPEED;
+            let mut desired_movement = delta_time * CLIMB_SPEED;
+
+            let blocking_tile_y = grid_transform.to_world(tiles.above.pos).y;
+            let (is_overlapping, movable_distance) = is_range_overlapping(blocking_tile_y, desired_position.y, TILE_SIZE_HEIGHT);
+            if is_overlapping {
+                desired_movement = 0.0;
+            } else {
+                desired_movement = f32::min(movable_distance, desired_movement)
+            }
+
+            desired_position.y += desired_movement;
+        }
+        // trying to move up ladder, and _can_
+        else if desired_direction.y > 0.0 && tiles.on.behaviour == Ladder {
+            let desired_movement = delta_time * CLIMB_SPEED;
+            desired_position.y += desired_movement;
             desired_position.x = grid_transform.snap(desired_position).x;
         }
-        else
+        // trying to move down ladder, and _can
+        else if desired_direction.y < 0.0
+            && (tiles.on.behaviour == Ladder || (tiles.on.behaviour == None && tiles.below.behaviour == Ladder))
         {
-            // trying to move up, and _can_
-            // trying to move down, and _can
-            // trying to move left
-            if desired_direction.x < 0.0 {
-                desired_position.x -= delta_time * HORIZONTAL_MOVEMENT_SPEED;
-            }
-            // trying to move right
-            else if desired_direction.x > 0.0 {
-                desired_position.x += delta_time * HORIZONTAL_MOVEMENT_SPEED;
-            }
-        }
+            let mut desired_movement = delta_time * CLIMB_SPEED;
 
-        // overlapping anything?
-        if is_overlapping_any_collider(&desired_position, &collision_map.colliders) {
-            desired_position = transform.translation;
-
-            if movement.is_falling {
-                movement.is_falling = false;
-                desired_position.y = grid_transform.snap(desired_position).y;
+            if tiles.below.behaviour == Blocker {
+                let blocking_tile_y = grid_transform.to_world(tiles.below.pos).y;
+                let (is_overlapping, movable_distance) = is_range_overlapping(blocking_tile_y, desired_position.y, TILE_SIZE_HEIGHT);
+                if is_overlapping {
+                    desired_movement = 0.0;
+                    movement.stop_falling();
+                } else {
+                    desired_movement = f32::min(movable_distance, desired_movement)
+                }
             }
+            desired_position.y -= desired_movement;
+            desired_position.x = grid_transform.snap(desired_position).x;
         }
+        // trying to move left
+        else if desired_direction.x < 0.0 {
+            let mut desired_movement = delta_time * HORIZONTAL_MOVEMENT_SPEED;
+            if tiles.left.behaviour == Blocker {
+                let blocking_tile_x = grid_transform.to_world(tiles.left.pos).x;
+                let (is_overlapping, movable_distance) = is_range_overlapping(blocking_tile_x, desired_position.x, TILE_SIZE_WIDTH);
+                desired_movement = if is_overlapping {
+                    0.0
+                } else {
+                    f32::min(movable_distance, desired_movement)
+                };
+            }
 
-        // clamp stuff
-        let horizontal_edge = (TILE_SIZE_WIDTH * MAP_SIZE_HALF_WIDTH as f32) - TILE_SIZE_HALF_WIDTH;
-        if desired_position.x >= horizontal_edge {
-            desired_position.x = horizontal_edge;
+            desired_position.x -= desired_movement;
+            desired_position.y = grid_transform.snap(desired_position).y;
         }
-        if desired_position.x <= -horizontal_edge {
-            desired_position.x = -horizontal_edge
+        // trying to move right
+        else if desired_direction.x > 0.0 {
+            let mut desired_movement = delta_time * HORIZONTAL_MOVEMENT_SPEED;
+            if tiles.right.behaviour == Blocker {
+                let blocking_tile_x = grid_transform.to_world(tiles.right.pos).x;
+                let (is_overlapping, movable_distance) = is_range_overlapping(blocking_tile_x, desired_position.x, TILE_SIZE_WIDTH);
+                desired_movement = if is_overlapping {
+                    0.0
+                } else {
+                    f32::min(movable_distance, desired_movement)
+                };
+            }
+
+            desired_position.x += desired_movement;
+            desired_position.y = grid_transform.snap(desired_position).y;
         }
 
         // feed velocity back into movement
@@ -164,27 +194,18 @@ pub fn apply_movement(time: Res<Time>, collision_map: Res<ColliderState>, mut qu
     }
 }
 
-fn is_overlapping_any_collider(pos: &Vec3, colliders: &Vec<Vec3>) -> bool {
-    for collider in colliders {
-        if is_overlapping(pos, collider) {
-            return true;
-        }
+fn is_range_overlapping(a: f32, b: f32, size: f32) -> (bool, f32) {
+    let delta = (b - a).abs();
+    if delta <= size {
+        (true, 0.0)
+    } else {
+        (false, delta - size)
     }
-    return false;
-}
-
-fn is_overlapping(a: &Vec3, b: &Vec3) -> bool {
-    is_range_overlapping(a.x, b.x, TILE_SIZE_WIDTH) && is_range_overlapping(a.y, b.y, TILE_SIZE_HEIGHT)
-}
-
-fn is_range_overlapping(a: f32, b: f32, size: f32) -> bool {
-    (b - a).abs() < size
 }
 
 pub fn exit_gameplay(mut commands: Commands, to_despawn: Query<Entity, With<LevelSpecificComponent>>) {
     for entity in to_despawn.iter() {
         commands.entity(entity).despawn_recursive();
     }
-    commands.remove_resource::<GameplayState>();
-    commands.remove_resource::<ColliderState>();
+    commands.remove_resource::<LevelResource>();
 }
