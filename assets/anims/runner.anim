@@ -1,0 +1,45 @@
+{
+	"fps": 22,
+	"sequence": {
+		"runRight": [
+			0,
+			1,
+			2
+		],
+		"runLeft": [
+			3,
+			4,
+			5
+		],
+		"runUpDown": [
+			6,
+			7
+		],
+		"ropeRight": [
+			9,
+			10,
+			10,
+			11,
+			11
+		],
+		"ropeLeft": [
+			12,
+			13,
+			13,
+			14,
+			14
+		],
+		"digRight": [
+			15
+		],
+		"digLeft": [
+			16
+		],
+		"fallRight": [
+			8
+		],
+		"fallLeft": [
+			17
+		]
+	}
+}

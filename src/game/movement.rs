@@ -107,8 +107,7 @@ pub fn apply_movement(time: Res<Time>, level: Res<LevelResource>, mut query: Que
         }
 
         // feed velocity back into movement
-        let velocity = desired_position - transform.translation;
-        movement.velocity = velocity;
+        movement.velocity = desired_position - transform.translation;
         transform.translation = desired_position;
     }
 }

@@ -1,4 +1,4 @@
-use crate::game::components::*;
+use crate::{assets::AnimAsset, game::components::*};
 use bevy::prelude::*;
 
 #[derive(Bundle, Clone, Default)]
@@ -133,10 +133,13 @@ pub struct PlayerBundle {
     pub player_input: LocalPlayerInput,
     pub grid_transform: GridTransform,
     pub movement: Movement,
+    pub anim_data: Handle<AnimAsset>,
+    pub sprite_anim: SpriteAnimator,
+    pub runner: Runner,
 }
 
 impl PlayerBundle {
-    pub fn new(texture: &Handle<TextureAtlas>, position: Vec3, offset: Vec3) -> Self {
+    pub fn new(texture: &Handle<TextureAtlas>, anim: &Handle<AnimAsset>, position: Vec3, offset: Vec3) -> Self {
         Self {
             sprite: TextureAtlasSprite::new(0),
             texture_atlas: texture.clone(),
@@ -145,6 +148,7 @@ impl PlayerBundle {
                 offset,
                 ..Default::default()
             },
+            anim_data: anim.clone(),
             ..Default::default()
         }
     }

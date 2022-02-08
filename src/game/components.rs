@@ -5,6 +5,9 @@ use bevy::prelude::*;
 pub struct LocalPlayerInput {}
 
 #[derive(Component, Default, Clone)]
+pub struct Runner {}
+
+#[derive(Component, Default, Clone)]
 pub struct Blocker {}
 
 #[derive(Component, Default, Clone)]
@@ -101,5 +104,35 @@ impl Movement {
         self.move_down = false;
 
         directions
+    }
+}
+
+#[derive(Component, Debug, Clone)]
+pub struct SpriteAnimator {
+    pub frame_index: usize,
+    pub animation_name: Option<String>,
+    pub elapsed: f32,
+    pub active: bool,
+}
+
+impl SpriteAnimator {
+    pub fn switch(&mut self, anim: &str) {
+        let new_anim = Some(anim.to_string());
+        if new_anim != self.animation_name {
+            self.frame_index = 0;
+            self.animation_name = new_anim;
+            self.elapsed = 0.0;
+        }
+    }
+}
+
+impl Default for SpriteAnimator {
+    fn default() -> Self {
+        Self {
+            frame_index: 0,
+            animation_name: None,
+            elapsed: 0.0,
+            active: false,
+        }
     }
 }

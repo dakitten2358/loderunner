@@ -2,8 +2,9 @@ mod assets;
 mod camera;
 mod game;
 
-use assets::LevelDataAsset;
-use assets::{AssetLoading::ProgressCounter, AssetsLoading, LevelDataAssetPlugin, LoadingPlugin};
+use assets::{
+    AnimAsset, AnimAssetPlugin, AssetLoading::ProgressCounter, AssetsLoading, LevelDataAsset, LevelDataAssetPlugin, LoadingPlugin,
+};
 use bevy::asset::Handle;
 use bevy::{asset::AssetServerSettings, prelude::*};
 use camera::*;
@@ -41,6 +42,7 @@ pub struct CoreAssets {
     pub runner_atlas: Handle<TextureAtlas>,
 
     pub map_handles: Vec<Handle<LevelDataAsset>>,
+    pub anim_handles: Vec<Handle<AnimAsset>>,
 }
 
 #[derive(Component)]
@@ -78,6 +80,7 @@ fn main() {
         .insert_resource(CoreAssets { ..Default::default() })
         .add_plugins(DefaultPlugins)
         .add_plugin(LevelDataAssetPlugin)
+        .add_plugin(AnimAssetPlugin)
         .add_plugin(ScalableOrthographicCameraPlugin)
         .add_plugin(LoadingPlugin {
             loading_state: InitialLoading,
@@ -145,6 +148,12 @@ fn load_core_assets(
     for level_data_handle in asset_server.load_folder("levels").expect("failed to load levels") {
         loading.add(&level_data_handle);
         core_assets.map_handles.push(level_data_handle.typed());
+    }
+
+    // load all the anims
+    for anim_data_handle in asset_server.load_folder("anims").expect("fialed to load anims") {
+        loading.add(&anim_data_handle);
+        core_assets.anim_handles.push(anim_data_handle.typed());
     }
 }
 
