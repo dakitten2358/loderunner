@@ -20,7 +20,7 @@ pub fn apply_movement(time: Res<Time>, level: Res<LevelResource>, mut query: Que
             movement.start_falling(grid_transform.translation);
         } else if movement.is_falling() {
             let mut desired_movement = delta_time * FALL_SPEED;
-            if tiles.below.behaviour == Blocker || (tiles.on.behaviour == Rope && tiles.on.pos != movement.fall_start_pos()) {
+            if (tiles.below.behaviour == Blocker || tiles.below.behaviour == Ladder) || (tiles.on.behaviour == Rope && tiles.on.pos != movement.fall_start_pos()) {
                 let blocking_tile_y = grid_transform.to_world(tiles.below.pos).y;
                 let (is_overlapping, movable_distance) = is_range_overlapping(blocking_tile_y, desired_position.y, TILE_SIZE_HEIGHT);
                 if is_overlapping {
