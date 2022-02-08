@@ -140,7 +140,7 @@ fn load_core_assets(
     // runner
     let runner_texture_handle = asset_server.load("runner.png");
     loading.add(&runner_texture_handle);
-    let runner_texture_atlas = TextureAtlas::from_grid(runner_texture_handle, Vec2::new(20.0, 22.0), 10, 2);
+    let runner_texture_atlas = TextureAtlas::from_grid(runner_texture_handle, Vec2::new(20.0, 22.0), 9, 2);
     let runner_texture_atlas_handle = texture_atlases.add(runner_texture_atlas);
     core_assets.runner_atlas = runner_texture_atlas_handle;
 
