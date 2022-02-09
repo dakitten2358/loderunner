@@ -40,6 +40,7 @@ pub struct CoreAssets {
     pub tiles_atlas: Handle<TextureAtlas>,
     pub guard_atlas: Handle<TextureAtlas>,
     pub runner_atlas: Handle<TextureAtlas>,
+    pub hole_atlas: Handle<TextureAtlas>,
 
     pub map_handles: Vec<Handle<LevelDataAsset>>,
     pub anim_handles: Vec<Handle<AnimAsset>>,
@@ -143,6 +144,13 @@ fn load_core_assets(
     let runner_texture_atlas = TextureAtlas::from_grid(runner_texture_handle, Vec2::new(20.0, 22.0), 9, 2);
     let runner_texture_atlas_handle = texture_atlases.add(runner_texture_atlas);
     core_assets.runner_atlas = runner_texture_atlas_handle;
+
+    // hole
+    let hole_texture_handle = asset_server.load("hole.png");
+    loading.add(&hole_texture_handle);
+    let hole_texture_atlas = TextureAtlas::from_grid(hole_texture_handle, Vec2::new(20.0, 22.0), 9, 4);
+    let hole_texture_atlas_handle = texture_atlases.add(hole_texture_atlas);
+    core_assets.hole_atlas = hole_texture_atlas_handle;
 
     // load all the maps
     for level_data_handle in asset_server.load_folder("levels").expect("failed to load levels") {

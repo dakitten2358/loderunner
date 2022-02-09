@@ -10,7 +10,7 @@ use std::collections::HashMap;
 #[uuid = "cf714ee8-e1ae-4ace-8467-a1ba1cf357ab"]
 pub struct AnimAsset {
     pub fps: f32,
-    pub sequence: HashMap<String, Vec<usize>>,
+    pub sequence: HashMap<String, AnimSequence>,
 }
 
 impl Default for AnimAsset {
@@ -18,6 +18,33 @@ impl Default for AnimAsset {
         Self {
             fps: 1.0,
             sequence: HashMap::new(),
+        }
+    }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AnimSequence {
+    pub frames: Vec<usize>,
+    pub looping: bool,
+}
+
+impl AnimSequence {
+    pub fn next_frame(&self, frame: usize) -> usize {
+        if self.looping {
+            (frame + 1) % self.frames.len()
+        } else if frame >= (self.frames.len() - 1) {
+            self.frames.len() - 1
+        } else {
+            frame + 1
+        }
+    }
+}
+
+impl Default for AnimSequence {
+    fn default() -> Self {
+        Self {
+            frames: Vec::new(),
+            looping: true,
         }
     }
 }

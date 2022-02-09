@@ -9,14 +9,23 @@ pub struct BrickBundle {
     pub global_transform: GlobalTransform,
     pub visibility: Visibility,
     blocker: Blocker,
+    pub burnable: Burnable,
+    pub grid_transform: GridTransform,
+    pub anim_data: Handle<AnimAsset>,
+    pub sprite_anim: SpriteAnimator,
 }
 
 impl BrickBundle {
-    pub fn new(texture: &Handle<TextureAtlas>, position: Vec3) -> Self {
+    pub fn new(texture: &Handle<TextureAtlas>, anim: &Handle<AnimAsset>, position: Vec3, offset: Vec3) -> Self {
         Self {
-            sprite: TextureAtlasSprite::new(1),
+            sprite: TextureAtlasSprite::new(35),
             texture_atlas: texture.clone(),
             transform: Transform::from_scale(Vec3::splat(1.0)).with_translation(position),
+            grid_transform: GridTransform {
+                offset,
+                ..Default::default()
+            },
+            anim_data: anim.clone(),
             ..Default::default()
         }
     }
@@ -192,4 +201,16 @@ impl SolidBrickBundle {
             ..Default::default()
         }
     }
+}
+
+#[derive(Bundle, Clone, Default)]
+pub struct SpriteEffectBundle {
+    pub sprite: TextureAtlasSprite,
+    pub texture_atlas: Handle<TextureAtlas>,
+    pub transform: Transform,
+    pub global_transform: GlobalTransform,
+    pub visibility: Visibility,
+    pub anim_data: Handle<AnimAsset>,
+    pub sprite_anim: SpriteAnimator,
+    pub kill_after: KillAfter,
 }

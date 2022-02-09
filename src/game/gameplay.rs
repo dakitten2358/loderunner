@@ -28,6 +28,8 @@ fn spawn_level_entities(
 ) {
     let tiles_atlas = &core_assets.tiles_atlas;
     let guard_atlas = &core_assets.guard_atlas;
+    let hole_atlas = &core_assets.hole_atlas;
+    let hole_anim = &animations.get_handle("anims/brick.anim");
     let runner_atlas = &core_assets.runner_atlas;
     let runner_anim = &animations.get_handle("anims/runner.anim");
 
@@ -45,7 +47,7 @@ fn spawn_level_entities(
         ) + level_offset;
 
         match tile.behaviour {
-            TileType::Brick => commands.spawn_bundle(BrickBundle::new(tiles_atlas, pos)),
+            TileType::Brick => commands.spawn_bundle(BrickBundle::new(hole_atlas, hole_anim, pos, level_offset)),
             TileType::FalseBrick => commands.spawn_bundle(FalseBrickBundle::new(tiles_atlas, pos)),
             TileType::Gold => commands.spawn_bundle(GoldBundle::new(tiles_atlas, pos)),
             TileType::Guard => commands.spawn_bundle(GuardBundle::new(guard_atlas, pos)),
@@ -68,9 +70,9 @@ pub fn update_grid_transforms(mut query: Query<(&Transform, &mut GridTransform)>
     }
 }
 
-pub fn player_input(keyboard_input: Res<Input<KeyCode>>, mut players: Query<&mut Movement, With<LocalPlayerInput>>) {
+pub fn player_input(keyboard_input: Res<Input<KeyCode>>, mut players: Query<(&mut Movement, &mut Runner), With<LocalPlayerInput>>) {
     // movement
-    for mut player_movement in players.iter_mut() {
+    for (mut player_movement, mut runner) in players.iter_mut() {
         if keyboard_input.pressed(KeyCode::Right) {
             player_movement.add_move_right();
         }
@@ -83,9 +85,73 @@ pub fn player_input(keyboard_input: Res<Input<KeyCode>>, mut players: Query<&mut
         if keyboard_input.pressed(KeyCode::Down) {
             player_movement.add_move_down();
         }
-    }
 
-    // burns
+        runner.burn_left = keyboard_input.pressed(KeyCode::Z);
+        runner.burn_right = keyboard_input.pressed(KeyCode::X);
+    }
+}
+
+pub fn runner_burns(mut runners: Query<(&GridTransform, &mut Runner)>, mut all_burnables: Query<(&GridTransform, &mut Burnable)>) {
+    let offset_left = IVec2::new(-1, -1);
+    let offset_right = IVec2::new(1, -1);
+
+    for (transform, mut runner) in runners.iter_mut() {
+        if runner.burn_left {
+            let burnables = all_burnables
+                .iter_mut()
+                .filter(|(t, _)| t.translation == (transform.translation + offset_left));
+            for (_, mut burnable) in burnables {
+                burnable.start_burn();
+            }
+        } else if runner.burn_right {
+            let burnables = all_burnables
+                .iter_mut()
+                .filter(|(t, _)| t.translation == (transform.translation + offset_right));
+            for (_, mut burnable) in burnables {
+                burnable.start_burn();
+            }
+        }
+    }
+}
+
+pub fn apply_burnables(time: Res<Time>, mut level: ResMut<LevelResource>, mut query: Query<(&mut Burnable, &GridTransform)>) {
+    use BurnState::*;
+
+    for (mut burnable, transform) in query.iter_mut() {
+        burnable.burn_time += time.delta_seconds();
+
+        match burnable.get_state() {
+            StartingBurn => burnable.set_state(Burning),
+            Burning => {
+                if burnable.burn_time > 0.5 {
+                    burnable.set_state(Burnt);
+                }
+            }
+            Burnt => {
+                level.set(transform.translation, EffectiveTileType::None);
+                if burnable.burn_time > 4.5 {
+                    burnable.set_state(Rebuilding);
+                }
+            }
+            Rebuilding => {
+                if burnable.burn_time > 5.0 {
+                    burnable.set_state(NotBurning);
+                    level.set(transform.translation, EffectiveTileType::Blocker);
+                    //TODO(jm): kill stuff?  spawn killer here?
+                }
+            }
+            _ => burnable.burn_time = 0.0,
+        }
+    }
+}
+
+pub fn pending_kills(mut commands: Commands, time: Res<Time>, mut query: Query<(Entity, &mut KillAfter)>) {
+    for (entity, mut kill_after) in query.iter_mut() {
+        kill_after.time_remaining -= time.delta_seconds();
+        if kill_after.time_remaining <= 0.0 {
+            commands.entity(entity).despawn_recursive();
+        }
+    }
 }
 
 pub fn exit_gameplay(mut commands: Commands, to_despawn: Query<Entity, With<LevelSpecificComponent>>) {

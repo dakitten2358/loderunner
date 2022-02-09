@@ -34,6 +34,19 @@ pub fn animgraph_runner(level: Res<LevelResource>, mut runners: Query<(&Movement
     }
 }
 
+pub fn animgraph_brick(mut query: Query<(&Burnable, &mut SpriteAnimator)>) {
+    use BurnState::*;
+    for (burnable, mut animator) in query.iter_mut() {
+        animator.active = true;
+        match burnable.get_state() {
+            Burning => animator.switch("burning"),
+            Rebuilding => animator.switch("rebuilding"),
+            NotBurning => animator.switch("default"),
+            _ => {}
+        }
+    }
+}
+
 pub fn animate_sprites(
     time: Res<Time>,
     animations: Res<Assets<AnimAsset>>,
@@ -52,9 +65,9 @@ pub fn animate_sprites(
             anim.elapsed += time.delta_seconds();
 
             while anim.elapsed > frame_time {
-                anim.frame_index = (anim.frame_index + 1) % anim_sequence.len();
+                anim.frame_index = anim_sequence.next_frame(anim.frame_index);
                 anim.elapsed -= frame_time;
-                sprite.index = anim_sequence[anim.frame_index];
+                sprite.index = anim_sequence.frames[anim.frame_index];
             }
         }
     }

@@ -5,10 +5,56 @@ use bevy::prelude::*;
 pub struct LocalPlayerInput {}
 
 #[derive(Component, Default, Clone)]
-pub struct Runner {}
+pub struct Runner {
+    pub burn_left: bool,
+    pub burn_right: bool,
+}
 
 #[derive(Component, Default, Clone)]
 pub struct Blocker {}
+
+#[derive(PartialEq, Copy, Clone)]
+pub enum BurnState {
+    NotBurning,
+    StartingBurn,
+    Burning,
+    Burnt,
+    Rebuilding,
+}
+
+#[derive(Component, Clone)]
+pub struct Burnable {
+    burn_state: BurnState,
+    pub burn_time: f32,
+}
+
+impl Burnable {
+    pub fn start_burn(&mut self) {
+        use BurnState::*;
+
+        if self.burn_state == NotBurning {
+            self.burn_state = StartingBurn;
+            self.burn_time = 0.0;
+        }
+    }
+
+    pub fn get_state(&self) -> BurnState {
+        self.burn_state
+    }
+
+    pub fn set_state(&mut self, new_state: BurnState) {
+        self.burn_state = new_state;
+    }
+}
+
+impl Default for Burnable {
+    fn default() -> Self {
+        Self {
+            burn_state: BurnState::NotBurning,
+            burn_time: 0.0,
+        }
+    }
+}
 
 #[derive(Component, Default, Clone)]
 pub struct GridTransform {
@@ -134,5 +180,22 @@ impl Default for SpriteAnimator {
             elapsed: 0.0,
             active: false,
         }
+    }
+}
+
+#[derive(Component, Debug, Clone)]
+pub struct KillAfter {
+    pub time_remaining: f32,
+}
+
+impl KillAfter {
+    pub fn new(time: f32) -> Self {
+        Self { time_remaining: time }
+    }
+}
+
+impl Default for KillAfter {
+    fn default() -> Self {
+        KillAfter::new(1.0)
     }
 }

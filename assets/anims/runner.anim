@@ -1,45 +1,41 @@
 {
 	"fps": 22,
 	"sequence": {
-		"runRight": [
-			0,
-			1,
-			2
-		],
-		"runLeft": [
-			3,
-			4,
-			5
-		],
-		"runUpDown": [
-			6,
-			7
-		],
-		"ropeRight": [
-			9,
-			10,
-			10,
-			11,
-			11
-		],
-		"ropeLeft": [
-			12,
-			13,
-			13,
-			14,
-			14
-		],
-		"digRight": [
-			15
-		],
-		"digLeft": [
-			16
-		],
-		"fallRight": [
-			8
-		],
-		"fallLeft": [
-			17
-		]
+		"runRight": {
+			"frames": [0, 1, 2 ],
+			"looping": true
+		},
+		"runLeft": {
+			"frames": [3, 4, 5],
+			"looping": true
+		},
+		"runUpDown": {
+			"frames": [6, 7],
+			"looping": true
+		},
+		"ropeRight": {
+			"frames": [9, 10, 10, 11, 11],
+			"looping": true
+		},
+		"ropeLeft": {
+			"frames": [12, 13, 13, 14, 14],
+			"looping": true
+		},
+		"digRight": {
+			"frames": [15],
+			"looping": true
+		},
+		"digLeft": {
+			"frames": [16],
+			"looping": true
+		},
+		"fallRight": {
+			"frames": [8],
+			"looping": true
+		},
+		"fallLeft": {
+			"frames": [17],
+			"looping": true
+		}
 	}
 }

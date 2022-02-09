@@ -86,8 +86,7 @@ impl LevelResource {
         self.tiles[self.to_index(pos)]
     }
 
-    #[allow(dead_code)]
-    fn set(&mut self, pos: IVec2, effective_tile: EffectiveTileType) {
+    pub fn set(&mut self, pos: IVec2, effective_tile: EffectiveTileType) {
         if self.is_in_bounds(pos) {
             let index = self.to_index(pos);
             self.tiles[index] = effective_tile;

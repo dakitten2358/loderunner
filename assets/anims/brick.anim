@@ -1,0 +1,17 @@
+{
+	"fps": 22,
+	"sequence": {
+		"default": {
+			"frames": [35],
+			"looping": false
+		},
+		"burning": {
+			"frames": [9, 10, 11, 11, 12, 13, 13, 14, 15, 15, 16],
+			"looping": false
+		},
+		"rebuilding": {
+			"frames": [17, 17, 17, 17, 17, 26, 26, 26, 26, 26, 35],
+			"looping": false
+		}
+	}
+}
