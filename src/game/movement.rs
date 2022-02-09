@@ -6,11 +6,16 @@ const HORIZONTAL_MOVEMENT_SPEED: f32 = TILE_SIZE_WIDTH * 7.0;
 const FALL_SPEED: f32 = TILE_SIZE_HEIGHT * 7.0;
 const CLIMB_SPEED: f32 = TILE_SIZE_HEIGHT * 7.0;
 
-pub fn apply_movement(time: Res<Time>, level: Res<LevelResource>, mut query: Query<(&mut Movement, &mut Transform, &GridTransform)>) {
+pub fn apply_movement(
+    mut commands: Commands,
+    time: Res<Time>,
+    level: Res<LevelResource>,
+    mut query: Query<(Entity, &mut Movement, &mut Transform, &GridTransform), Without<Falling>>,
+) {
     use EffectiveTileType::*;
 
     let delta_time = time.delta().as_secs_f32();
-    for (mut movement, mut transform, grid_transform) in query.iter_mut() {
+    for (entity, mut movement, mut transform, grid_transform) in query.iter_mut() {
         let mut desired_position = transform.translation;
         let tiles = level.around(grid_transform.translation);
 
@@ -18,23 +23,7 @@ pub fn apply_movement(time: Res<Time>, level: Res<LevelResource>, mut query: Que
 
         if should_start_falling(&movement, &tiles) || wants_to_drop_from_rope(desired_direction, tiles) {
             movement.start_falling(grid_transform.translation);
-        } else if movement.is_falling() {
-            let mut desired_movement = delta_time * FALL_SPEED;
-            if (tiles.below.behaviour == Blocker || tiles.below.behaviour == Ladder)
-                || (tiles.on.behaviour == Rope && tiles.on.pos != movement.fall_start_pos())
-            {
-                let blocking_tile_y = grid_transform.to_world(tiles.below.pos).y;
-                let (is_overlapping, movable_distance) = is_range_overlapping(blocking_tile_y, desired_position.y, TILE_SIZE_HEIGHT);
-                if is_overlapping {
-                    desired_movement = 0.0;
-                    movement.stop_falling();
-                } else {
-                    desired_movement = f32::min(movable_distance, desired_movement)
-                }
-            }
-
-            desired_position.y -= desired_movement;
-            desired_position.x += drift_towards(grid_transform.snap(desired_position).x, desired_position.x, delta_time * FALL_SPEED);
+            commands.entity(entity).insert(Falling {});
         }
         // top of ladder?
         else if desired_direction.y > 0.0 && (tiles.on.behaviour == None || tiles.on.behaviour == Rope) && tiles.below.behaviour == Ladder
@@ -104,6 +93,47 @@ pub fn apply_movement(time: Res<Time>, level: Res<LevelResource>, mut query: Que
     }
 }
 
+pub fn apply_falling(
+    mut commands: Commands,
+    time: Res<Time>,
+    level: Res<LevelResource>,
+    mut query: Query<(Entity, &mut Movement, &mut Transform, &GridTransform), With<Falling>>,
+) {
+    use EffectiveTileType::*;
+
+    let delta_time = time.delta().as_secs_f32();
+    for (entity, mut movement, mut transform, grid_transform) in query.iter_mut() {
+        let mut desired_position = transform.translation;
+        let tiles = level.around(grid_transform.translation);
+
+        movement.consume();
+
+        if movement.is_falling() {
+            let mut desired_movement = delta_time * FALL_SPEED;
+            if (tiles.below.behaviour == Blocker || tiles.below.behaviour == Ladder)
+                || (tiles.on.behaviour == Rope && tiles.on.pos != movement.fall_start_pos())
+            {
+                let blocking_tile_y = grid_transform.to_world(tiles.below.pos).y;
+                let (is_overlapping, movable_distance) = is_range_overlapping(blocking_tile_y, desired_position.y, TILE_SIZE_HEIGHT);
+                if is_overlapping {
+                    desired_movement = 0.0;
+                    movement.stop_falling();
+                    commands.entity(entity).remove::<Falling>();
+                } else {
+                    desired_movement = f32::min(movable_distance, desired_movement)
+                }
+            }
+
+            desired_position.y -= desired_movement;
+            desired_position.x += drift_towards(grid_transform.snap(desired_position).x, desired_position.x, delta_time * FALL_SPEED);
+        }
+
+        // feed velocity back into movement
+        movement.velocity = desired_position - transform.translation;
+        transform.translation = desired_position;
+    }
+}
+
 fn drift_towards(target: f32, current: f32, speed: f32) -> f32 {
     let signed_distance_between = target - current;
     let direction = useful_sign(signed_distance_between);
@@ -130,10 +160,6 @@ fn should_start_falling(movement: &Movement, tiles: &TilesAround) -> bool {
     if movement.is_falling() {
         false
     }
-	// if we're on a ladder, we dont' fall
-	else if tiles.on.behaviour == Ladder {
-		false
-	}
     // nothing below us, and not on a rope
     else if tiles.below.behaviour == None && tiles.on.behaviour != Rope {
         true

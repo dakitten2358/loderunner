@@ -11,7 +11,7 @@ mod movement;
 use crate::BevyState;
 use animations::{animate_sprites, animgraph_brick, animgraph_runner};
 use gameplay::*;
-use movement::apply_movement;
+use movement::{apply_falling, apply_movement};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, SystemLabel)]
 pub enum GameplaySystem {
@@ -35,6 +35,7 @@ impl<S: BevyState> Plugin for GameplayPlugin<S> {
                 .with_system(player_input.label(Input))
                 .with_system(runner_burns.after(Input).before(Movement))
                 .with_system(apply_burnables.after(Input).before(Movement))
+                .with_system(apply_falling.before(Movement).after(Input))
                 .with_system(apply_movement.label(Movement).after(Input))
                 .with_system(animgraph_runner.before(Animation).after(Movement))
                 .with_system(animgraph_brick.before(Animation).after(Movement))

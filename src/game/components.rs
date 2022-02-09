@@ -154,6 +154,15 @@ impl Movement {
 }
 
 #[derive(Component, Debug, Clone)]
+pub struct Falling {}
+
+impl Default for Falling {
+    fn default() -> Self {
+        Self {}
+    }
+}
+
+#[derive(Component, Debug, Clone)]
 pub struct SpriteAnimator {
     pub frame_index: usize,
     pub animation_name: Option<String>,
