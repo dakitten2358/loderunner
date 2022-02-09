@@ -16,7 +16,7 @@ pub fn apply_movement(time: Res<Time>, level: Res<LevelResource>, mut query: Que
 
         let desired_direction = movement.consume();
 
-        if should_start_falling(&movement, &tiles) {
+        if should_start_falling(&movement, &tiles) || wants_to_drop_from_rope(desired_direction, tiles) {
             movement.start_falling(grid_transform.translation);
         } else if movement.is_falling() {
             let mut desired_movement = delta_time * FALL_SPEED;
@@ -35,13 +35,6 @@ pub fn apply_movement(time: Res<Time>, level: Res<LevelResource>, mut query: Que
 
             desired_position.y -= desired_movement;
             desired_position.x += drift_towards(grid_transform.snap(desired_position).x, desired_position.x, delta_time * FALL_SPEED);
-        }
-        // dropping from rope?
-        else if desired_direction.y < 0.0
-            && tiles.on.behaviour == Rope
-            && (tiles.below.behaviour == None || tiles.below.behaviour == Rope)
-        {
-            movement.start_falling(grid_transform.translation);
         }
         // top of ladder?
         else if desired_direction.y > 0.0 && (tiles.on.behaviour == None || tiles.on.behaviour == Rope) && tiles.below.behaviour == Ladder
@@ -152,6 +145,12 @@ fn should_start_falling(movement: &Movement, tiles: &TilesAround) -> bool {
     else {
         false
     }
+}
+
+fn wants_to_drop_from_rope(desired_direction: Vec2, tiles: TilesAround) -> bool {
+    use EffectiveTileType::*;
+
+    desired_direction.y < 0.0 && tiles.on.behaviour == Rope && (tiles.below.behaviour == None || tiles.below.behaviour == Rope)
 }
 
 fn is_range_overlapping(a: f32, b: f32, size: f32) -> (bool, f32) {
