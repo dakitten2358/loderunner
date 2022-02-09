@@ -64,11 +64,8 @@ pub fn apply_movement(time: Res<Time>, level: Res<LevelResource>, mut query: Que
             let mut desired_movement = delta_time * -CLIMB_SPEED;
             if tiles.below.behaviour == Blocker {
                 let blocking_tile_y = grid_transform.to_world(tiles.below.pos).y;
-                let (is_overlapping, movable_distance) = is_range_overlapping(blocking_tile_y, desired_position.y, TILE_SIZE_HEIGHT);
+                let (_, movable_distance) = is_range_overlapping(blocking_tile_y, desired_position.y, TILE_SIZE_HEIGHT);
                 desired_movement = f32::min(movable_distance, desired_movement.abs()) * -1.0;
-                if is_overlapping {
-                    movement.stop_falling();
-                }
             }
 
             if desired_movement != 0.0 {
@@ -133,6 +130,10 @@ fn should_start_falling(movement: &Movement, tiles: &TilesAround) -> bool {
     if movement.is_falling() {
         false
     }
+	// if we're on a ladder, we dont' fall
+	else if tiles.on.behaviour == Ladder {
+		false
+	}
     // nothing below us, and not on a rope
     else if tiles.below.behaviour == None && tiles.on.behaviour != Rope {
         true
