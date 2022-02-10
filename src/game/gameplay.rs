@@ -95,7 +95,7 @@ pub fn player_input(keyboard_input: Res<Input<KeyCode>>, mut players: Query<(&mu
     }
 }
 
-pub fn runner_burns(level: Res<LevelResource>, mut runners: Query<(&GridTransform, &mut Runner)>, mut all_burnables: Query<&mut Burnable>) {
+pub fn start_burns(level: Res<LevelResource>, mut runners: Query<(&GridTransform, &mut Runner), Without<Falling>>, mut all_burnables: Query<&mut Burnable>) {
     for (transform, mut runner) in runners.iter_mut() {
         let tiles = level.around(transform.translation);
         if runner.burn_left && start_burn(&tiles.below_left, &mut all_burnables) {

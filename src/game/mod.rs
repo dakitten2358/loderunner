@@ -33,7 +33,7 @@ impl<S: BevyState> Plugin for GameplayPlugin<S> {
             SystemSet::on_update(self.for_state.clone())
                 .with_system(update_grid_transforms.before(Input))
                 .with_system(player_input.label(Input))
-                .with_system(runner_burns.after(Input).before(Movement))
+                .with_system(start_burns.after(Input).before(Movement))
                 .with_system(apply_burnables.after(Input).before(Movement))
                 .with_system(apply_falling.before(Movement).after(Input))
                 .with_system(apply_movement.label(Movement).after(Input))
