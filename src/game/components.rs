@@ -87,6 +87,7 @@ pub struct Movement {
     move_down: bool,
 
     is_falling: bool,
+    fall_direction: f32,
     start_fall_position: IVec2,
 
     pub velocity: Vec3,
@@ -109,13 +110,18 @@ impl Movement {
         self.move_down = true;
     }
 
-    pub fn start_falling(&mut self, start_pos: IVec2) {
+    pub fn start_falling(&mut self, start_pos: IVec2, direction: f32) {
         self.is_falling = true;
         self.start_fall_position = start_pos;
+        self.fall_direction = direction;
     }
 
     pub fn is_falling(&self) -> bool {
         self.is_falling
+    }
+
+    pub fn get_fall_direction(&self) -> f32 {
+        self.fall_direction
     }
 
     pub fn fall_start_pos(&self) -> IVec2 {

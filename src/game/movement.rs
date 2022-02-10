@@ -18,14 +18,15 @@ pub fn apply_movement(
     for (entity, mut movement, mut transform, grid_transform) in query.iter_mut() {
         let mut desired_position = transform.translation;
         let tiles = level.around(grid_transform.translation);
+        let previous_velocity = movement.velocity;
 
         let desired_direction = movement.consume();
 
         if should_start_falling(&tiles) || wants_to_drop_from_rope(desired_direction, tiles) {
-            movement.start_falling(grid_transform.translation);
+            movement.start_falling(grid_transform.translation, previous_velocity.x);
             commands.entity(entity).insert(Falling {});
         } else if drop_from_ladder_bottom(desired_direction, tiles) {
-            movement.start_falling(tiles.above.pos);
+            movement.start_falling(tiles.above.pos, 0.0);
             commands.entity(entity).insert(Falling {});
         }
         // top of ladder?

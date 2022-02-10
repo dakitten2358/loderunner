@@ -18,7 +18,11 @@ pub fn animgraph_runner(level: Res<LevelResource>, mut runners: Query<(&Movement
             let tiles = level.around(transform.translation);
 
             if movement.is_falling() {
-                animator.switch("fallRight")
+                if movement.get_fall_direction() >= 0.0 {
+                    animator.switch("fallRight")
+                } else {
+                    animator.switch("fallLeft")
+                }
             } else if tiles.on.behaviour == Rope && movement.velocity.x > 0.0 {
                 animator.switch("ropeRight")
             } else if tiles.on.behaviour == Rope && movement.velocity.x < 0.0 {
