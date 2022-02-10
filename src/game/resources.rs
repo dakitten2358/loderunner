@@ -1,4 +1,4 @@
-use bevy::math::IVec2;
+use bevy::{math::IVec2, prelude::Entity};
 
 use crate::assets::LevelAsset::{LevelDataAsset, TileType};
 
@@ -10,8 +10,31 @@ pub enum EffectiveTileType {
     Rope,
 }
 
+impl Default for EffectiveTileType {
+    fn default() -> Self {
+        EffectiveTileType::None
+    }
+}
+
+#[derive(Clone, Copy, Default)]
+pub struct LevelTile {
+    pub entity: Option<Entity>,
+    pub behaviour: EffectiveTileType,
+}
+
+impl LevelTile {
+    pub const NONE: Self = Self {
+        entity: None,
+        behaviour: EffectiveTileType::None,
+    };
+    pub const BLOCKER: Self = Self {
+        entity: None,
+        behaviour: EffectiveTileType::Blocker,
+    };
+}
+
 pub struct LevelResource {
-    tiles: Vec<EffectiveTileType>,
+    tiles: Vec<LevelTile>,
     width: i32,
     height: i32,
 }
@@ -25,17 +48,25 @@ pub struct TilesAround {
 
     pub left: Tile,
     pub right: Tile,
+
+    pub below_left: Tile,
+    pub below_right: Tile,
 }
 
 #[derive(Clone, Copy)]
 pub struct Tile {
+    pub entity: Option<Entity>,
     pub pos: IVec2,
     pub behaviour: EffectiveTileType,
 }
 
 impl Tile {
-    pub fn new(pos: IVec2, behaviour: EffectiveTileType) -> Self {
-        Self { pos, behaviour }
+    pub fn new(pos: IVec2, tile: &LevelTile) -> Self {
+        Self {
+            entity: tile.entity,
+            pos,
+            behaviour: tile.behaviour,
+        }
     }
 }
 
@@ -43,14 +74,14 @@ impl LevelResource {
     pub fn from_asset(level_asset: &LevelDataAsset) -> Self {
         let size = (level_asset.width * level_asset.height) as usize;
         let mut new_resource = Self {
-            tiles: vec![EffectiveTileType::None; size],
+            tiles: vec![LevelTile { ..Default::default() }; size],
             width: level_asset.width,
             height: level_asset.height,
         };
 
         for tile in &level_asset.tiles {
             let index = new_resource.to_index(tile.position);
-            new_resource.tiles[index] = match tile.behaviour {
+            new_resource.tiles[index].behaviour = match tile.behaviour {
                 TileType::Brick | TileType::SolidBrick => EffectiveTileType::Blocker,
                 TileType::Ladder => EffectiveTileType::Ladder,
                 TileType::Rope => EffectiveTileType::Rope,
@@ -62,34 +93,47 @@ impl LevelResource {
     }
 
     pub fn around(&self, pos: IVec2) -> TilesAround {
-        let above: IVec2 = IVec2::new(0, 1);
-        let below: IVec2 = IVec2::new(0, -1);
-        let left: IVec2 = IVec2::new(-1, 0);
-        let right: IVec2 = IVec2::new(1, 0);
+        let above = IVec2::new(0, 1);
+        let below = IVec2::new(0, -1);
+        let left = IVec2::new(-1, 0);
+        let right = IVec2::new(1, 0);
+
+        let below_left = IVec2::new(-1, -1);
+        let below_right = IVec2::new(1, -1);
 
         TilesAround {
-            above: Tile::new(pos + above, self.at(pos + above)),
-            below: Tile::new(pos + below, self.at(pos + below)),
-            left: Tile::new(pos + left, self.at(pos + left)),
-            right: Tile::new(pos + right, self.at(pos + right)),
-            on: Tile::new(pos, self.at(pos)),
+            above: Tile::new(pos + above, &self.at(pos + above)),
+            below: Tile::new(pos + below, &self.at(pos + below)),
+            left: Tile::new(pos + left, &self.at(pos + left)),
+            right: Tile::new(pos + right, &self.at(pos + right)),
+            on: Tile::new(pos, &self.at(pos)),
+            below_left: Tile::new(pos + below_left, &self.at(pos + below_left)),
+            below_right: Tile::new(pos + below_right, &self.at(pos + below_right)),
         }
     }
 
-    fn at(&self, pos: IVec2) -> EffectiveTileType {
+    fn at(&self, pos: IVec2) -> LevelTile {
         if !self.is_in_bounds(pos) {
             if pos.y >= self.height {
-                return EffectiveTileType::None;
+                return LevelTile::NONE;
             }
-            return EffectiveTileType::Blocker;
+            return LevelTile::BLOCKER;
         }
+
         self.tiles[self.to_index(pos)]
     }
 
     pub fn set(&mut self, pos: IVec2, effective_tile: EffectiveTileType) {
         if self.is_in_bounds(pos) {
             let index = self.to_index(pos);
-            self.tiles[index] = effective_tile;
+            self.tiles[index].behaviour = effective_tile;
+        }
+    }
+
+    pub fn set_entity(&mut self, pos: IVec2, entity: Entity) {
+        if self.is_in_bounds(pos) {
+            let index = self.to_index(pos);
+            self.tiles[index].entity = Some(entity);
         }
     }
 

@@ -13,8 +13,9 @@ pub fn init_gameplay(
     animations: Res<Assets<AnimAsset>>,
 ) {
     let level_data = level_datas.get("levels/debug/debug.level").unwrap();
-    spawn_level_entities(&mut commands, core_assets, level_data, &animations);
-    commands.insert_resource(LevelResource::from_asset(level_data))
+    let mut level = LevelResource::from_asset(level_data);
+    spawn_level_entities(&mut commands, core_assets, level_data, &animations, &mut level);
+    commands.insert_resource(level)
 }
 
 #[derive(Component)]
@@ -25,6 +26,7 @@ fn spawn_level_entities(
     core_assets: Res<CoreAssets>,
     level_data: &LevelDataAsset,
     animations: &Res<Assets<AnimAsset>>,
+    level: &mut LevelResource,
 ) {
     let tiles_atlas = &core_assets.tiles_atlas;
     let guard_atlas = &core_assets.guard_atlas;
@@ -46,7 +48,7 @@ fn spawn_level_entities(
             0.0,
         ) + level_offset;
 
-        match tile.behaviour {
+        let tile_id = match tile.behaviour {
             TileType::Brick => commands.spawn_bundle(BrickBundle::new(hole_atlas, hole_anim, pos, level_offset)),
             TileType::FalseBrick => commands.spawn_bundle(FalseBrickBundle::new(tiles_atlas, pos)),
             TileType::Gold => commands.spawn_bundle(GoldBundle::new(tiles_atlas, pos)),
@@ -57,7 +59,9 @@ fn spawn_level_entities(
             TileType::Rope => commands.spawn_bundle(RopeBundle::new(tiles_atlas, pos)),
             TileType::SolidBrick => commands.spawn_bundle(SolidBrickBundle::new(tiles_atlas, pos)),
         }
-        .insert(LevelSpecificComponent);
+        .insert(LevelSpecificComponent)
+        .id();
+        level.set_entity(tile.position, tile_id);
     }
 }
 
@@ -91,27 +95,25 @@ pub fn player_input(keyboard_input: Res<Input<KeyCode>>, mut players: Query<(&mu
     }
 }
 
-pub fn runner_burns(mut runners: Query<(&GridTransform, &mut Runner)>, mut all_burnables: Query<(&GridTransform, &mut Burnable)>) {
-    let offset_left = IVec2::new(-1, -1);
-    let offset_right = IVec2::new(1, -1);
-
+pub fn runner_burns(level: Res<LevelResource>, mut runners: Query<(&GridTransform, &mut Runner)>, mut all_burnables: Query<&mut Burnable>) {
     for (transform, mut runner) in runners.iter_mut() {
-        if runner.burn_left {
-            let burnables = all_burnables
-                .iter_mut()
-                .filter(|(t, _)| t.translation == (transform.translation + offset_left));
-            for (_, mut burnable) in burnables {
-                burnable.start_burn();
-            }
-        } else if runner.burn_right {
-            let burnables = all_burnables
-                .iter_mut()
-                .filter(|(t, _)| t.translation == (transform.translation + offset_right));
-            for (_, mut burnable) in burnables {
-                burnable.start_burn();
-            }
+        let tiles = level.around(transform.translation);
+        if runner.burn_left && start_burn(&tiles.below_left, &mut all_burnables) {
+            println!("left burn");
+        } else if runner.burn_right && start_burn(&tiles.below_right, &mut all_burnables) {
+            println!("right burn");
         }
     }
+}
+
+fn start_burn(tile: &Tile, all_burnables: &mut Query<&mut Burnable>) -> bool {
+    if let Some(ent) = tile.entity {
+        if let Ok(mut burnable) = all_burnables.get_mut(ent) {
+            burnable.start_burn();
+            return true;
+        }
+    }
+    false
 }
 
 pub fn apply_burnables(time: Res<Time>, mut level: ResMut<LevelResource>, mut query: Query<(&mut Burnable, &GridTransform)>) {
