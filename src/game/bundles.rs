@@ -212,5 +212,5 @@ pub struct SpriteEffectBundle {
     pub visibility: Visibility,
     pub anim_data: Handle<AnimAsset>,
     pub sprite_anim: SpriteAnimator,
-    pub kill_after: KillAfter,
+    pub kill_after: DespawnAfter,
 }

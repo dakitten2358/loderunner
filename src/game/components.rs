@@ -193,18 +193,18 @@ impl Default for SpriteAnimator {
 }
 
 #[derive(Component, Debug, Clone)]
-pub struct KillAfter {
+pub struct DespawnAfter {
     pub time_remaining: f32,
 }
 
-impl KillAfter {
+impl DespawnAfter {
     pub fn new(time: f32) -> Self {
         Self { time_remaining: time }
     }
 }
 
-impl Default for KillAfter {
+impl Default for DespawnAfter {
     fn default() -> Self {
-        KillAfter::new(1.0)
+        DespawnAfter::new(1.0)
     }
 }

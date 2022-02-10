@@ -145,10 +145,10 @@ pub fn apply_burnables(time: Res<Time>, mut level: ResMut<LevelResource>, mut qu
     }
 }
 
-pub fn pending_kills(mut commands: Commands, time: Res<Time>, mut query: Query<(Entity, &mut KillAfter)>) {
-    for (entity, mut kill_after) in query.iter_mut() {
-        kill_after.time_remaining -= time.delta_seconds();
-        if kill_after.time_remaining <= 0.0 {
+pub fn pending_despawns(mut commands: Commands, time: Res<Time>, mut query: Query<(Entity, &mut DespawnAfter)>) {
+    for (entity, mut despawn_after) in query.iter_mut() {
+        despawn_after.time_remaining -= time.delta_seconds();
+        if despawn_after.time_remaining <= 0.0 {
             commands.entity(entity).despawn_recursive();
         }
     }

@@ -40,7 +40,7 @@ impl<S: BevyState> Plugin for GameplayPlugin<S> {
                 .with_system(animgraph_runner.before(Animation).after(Movement))
                 .with_system(animgraph_brick.before(Animation).after(Movement))
                 .with_system(animate_sprites.label(Animation).after(Movement))
-                .with_system(pending_kills.after(Input).after(Movement).after(Animation)),
+                .with_system(pending_despawns.after(Input).after(Movement).after(Animation)),
         );
         app.add_system_set(SystemSet::on_exit(self.for_state.clone()).with_system(exit_gameplay));
     }
