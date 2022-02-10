@@ -21,8 +21,11 @@ pub fn apply_movement(
 
         let desired_direction = movement.consume();
 
-        if should_start_falling(&movement, &tiles) || wants_to_drop_from_rope(desired_direction, tiles) {
+        if should_start_falling(&tiles) || wants_to_drop_from_rope(desired_direction, tiles) {
             movement.start_falling(grid_transform.translation);
+            commands.entity(entity).insert(Falling {});
+        } else if drop_from_ladder_bottom(desired_direction, tiles) {
+            movement.start_falling(tiles.above.pos);
             commands.entity(entity).insert(Falling {});
         }
         // top of ladder?
@@ -37,13 +40,22 @@ pub fn apply_movement(
         }
         // trying to move up ladder, and _can_
         else if desired_direction.y > 0.0 && tiles.on.behaviour == Ladder {
-            let desired_movement = delta_time * CLIMB_SPEED;
-            desired_position.y += desired_movement;
-            desired_position.x += drift_towards(
-                grid_transform.snap(desired_position).x,
-                desired_position.x,
-                delta_time * HORIZONTAL_MOVEMENT_SPEED,
-            );
+            let mut desired_movement = delta_time * CLIMB_SPEED;
+
+            if tiles.above.behaviour == Blocker {
+                let blocking_tile_y = grid_transform.to_world(tiles.above.pos).y;
+                let (_, movable_distance) = is_range_overlapping(blocking_tile_y, desired_position.y, TILE_SIZE_HEIGHT);
+                desired_movement = f32::min(movable_distance, desired_movement.abs());
+            }
+
+            if desired_movement != 0.0 {
+                desired_position.y += desired_movement;
+                desired_position.x += drift_towards(
+                    grid_transform.snap(desired_position).x,
+                    desired_position.x,
+                    delta_time * HORIZONTAL_MOVEMENT_SPEED,
+                );
+            }
         }
         // trying to move down ladder, and _can
         else if desired_direction.y < 0.0
@@ -108,25 +120,23 @@ pub fn apply_falling(
 
         movement.consume();
 
-        if movement.is_falling() {
-            let mut desired_movement = delta_time * FALL_SPEED;
-            if (tiles.below.behaviour == Blocker || tiles.below.behaviour == Ladder)
-                || (tiles.on.behaviour == Rope && tiles.on.pos != movement.fall_start_pos())
-            {
-                let blocking_tile_y = grid_transform.to_world(tiles.below.pos).y;
-                let (is_overlapping, movable_distance) = is_range_overlapping(blocking_tile_y, desired_position.y, TILE_SIZE_HEIGHT);
-                if is_overlapping {
-                    desired_movement = 0.0;
-                    movement.stop_falling();
-                    commands.entity(entity).remove::<Falling>();
-                } else {
-                    desired_movement = f32::min(movable_distance, desired_movement)
-                }
+        let mut desired_movement = delta_time * FALL_SPEED;
+        if (tiles.below.behaviour == Blocker || tiles.below.behaviour == Ladder)
+            || (tiles.on.behaviour == Rope && tiles.on.pos != movement.fall_start_pos())
+        {
+            let blocking_tile_y = grid_transform.to_world(tiles.below.pos).y;
+            let (is_overlapping, movable_distance) = is_range_overlapping(blocking_tile_y, desired_position.y, TILE_SIZE_HEIGHT);
+            if is_overlapping {
+                desired_movement = 0.0;
+                movement.stop_falling();
+                commands.entity(entity).remove::<Falling>();
+            } else {
+                desired_movement = f32::min(movable_distance, desired_movement)
             }
-
-            desired_position.y -= desired_movement;
-            desired_position.x += drift_towards(grid_transform.snap(desired_position).x, desired_position.x, delta_time * FALL_SPEED);
         }
+
+        desired_position.y -= desired_movement;
+        desired_position.x += drift_towards(grid_transform.snap(desired_position).x, desired_position.x, delta_time * FALL_SPEED);
 
         // feed velocity back into movement
         movement.velocity = desired_position - transform.translation;
@@ -153,11 +163,11 @@ fn get_horizontal_tile_from_sign(horizontal_direction: f32, tiles: &TilesAround)
 }
 
 #[allow(clippy::needless_bool, clippy::if_same_then_else)] // i want to keep the conditions separate for readability
-fn should_start_falling(movement: &Movement, tiles: &TilesAround) -> bool {
+fn should_start_falling(tiles: &TilesAround) -> bool {
     use EffectiveTileType::*;
 
-    // already falling?
-    if movement.is_falling() {
+    // if we're on a ladder, we dont' fall
+    if tiles.on.behaviour == Ladder {
         false
     }
     // nothing below us, and not on a rope
@@ -176,8 +186,12 @@ fn should_start_falling(movement: &Movement, tiles: &TilesAround) -> bool {
 
 fn wants_to_drop_from_rope(desired_direction: Vec2, tiles: TilesAround) -> bool {
     use EffectiveTileType::*;
-
     desired_direction.y < 0.0 && tiles.on.behaviour == Rope && (tiles.below.behaviour == None || tiles.below.behaviour == Rope)
+}
+
+fn drop_from_ladder_bottom(desired_direction: Vec2, tiles: TilesAround) -> bool {
+    use EffectiveTileType::*;
+    desired_direction.y < 0.0 && (tiles.on.behaviour == None || tiles.on.behaviour == Rope) && tiles.above.behaviour == Ladder
 }
 
 fn is_range_overlapping(a: f32, b: f32, size: f32) -> (bool, f32) {
