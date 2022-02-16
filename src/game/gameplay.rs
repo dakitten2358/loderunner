@@ -6,6 +6,11 @@ use crate::CoreAssets;
 use crate::{MAP_SIZE_HALF_WIDTH, TILE_SIZE_HEIGHT, TILE_SIZE_WIDTH};
 use bevy::prelude::*;
 
+pub struct SpawnableResources {
+    pub fire_left: SpriteEffectBundle,
+    pub fire_right: SpriteEffectBundle,
+}
+
 pub fn init_gameplay(
     mut commands: Commands,
     core_assets: Res<CoreAssets>,
@@ -14,8 +19,16 @@ pub fn init_gameplay(
 ) {
     let level_data = level_datas.get("levels/debug/debug.level").unwrap();
     let mut level = LevelResource::from_asset(level_data);
-    spawn_level_entities(&mut commands, core_assets, level_data, &animations, &mut level);
-    commands.insert_resource(level)
+    spawn_level_entities(&mut commands, &core_assets, level_data, &animations, &mut level);
+    commands.insert_resource(level);
+
+    let fire_atlas = &core_assets.hole_atlas;
+    let fire_anim = &animations.get_handle("anims/fire.anim");
+    let spawnables = SpawnableResources {
+        fire_left: SpriteEffectBundle::new(fire_atlas, fire_anim, Vec3::ZERO, "left"),
+        fire_right: SpriteEffectBundle::new(fire_atlas, fire_anim, Vec3::ZERO, "right"),
+    };
+    commands.insert_resource(spawnables);
 }
 
 #[derive(Component)]
@@ -23,7 +36,7 @@ pub struct LevelSpecificComponent;
 
 fn spawn_level_entities(
     commands: &mut Commands,
-    core_assets: Res<CoreAssets>,
+    core_assets: &Res<CoreAssets>,
     level_data: &LevelDataAsset,
     animations: &Res<Assets<AnimAsset>>,
     level: &mut LevelResource,
@@ -90,18 +103,50 @@ pub fn player_input(keyboard_input: Res<Input<KeyCode>>, mut players: Query<(&mu
             player_movement.add_move_down();
         }
 
-        runner.burn_left = keyboard_input.pressed(KeyCode::Z);
-        runner.burn_right = keyboard_input.pressed(KeyCode::X);
+        runner.wants_to_burn_left = keyboard_input.pressed(KeyCode::Z);
+        runner.wants_to_burn_right = keyboard_input.pressed(KeyCode::X);
     }
 }
 
-pub fn start_burns(level: Res<LevelResource>, mut runners: Query<(&GridTransform, &mut Runner), Without<Falling>>, mut all_burnables: Query<&mut Burnable>) {
-    for (transform, mut runner) in runners.iter_mut() {
-        let tiles = level.around(transform.translation);
-        if runner.burn_left && start_burn(&tiles.below_left, &mut all_burnables) {
-            println!("left burn");
-        } else if runner.burn_right && start_burn(&tiles.below_right, &mut all_burnables) {
-            println!("right burn");
+pub fn start_burns(
+    time: Res<Time>,
+    level: Res<LevelResource>,
+    mut commands: Commands,
+    spawnables: Res<SpawnableResources>,
+    mut runners: Query<(&GridTransform, &mut Runner, &mut Transform, &mut Movement), Without<Falling>>,
+    mut all_burnables: Query<&mut Burnable>,
+) {
+    for (transform, mut runner, mut world_transform, mut movement) in runners.iter_mut() {
+        // check to see if we should start a burn
+        if !runner.is_burning() {
+            let tiles = level.around(transform.translation);
+            if runner.wants_to_burn_left && start_burn(&tiles.below_left, &mut all_burnables) {
+                let mut fire = spawnables.fire_left.clone();
+                fire.transform.translation = transform.to_world(tiles.left.pos);
+                commands.spawn_bundle(fire);
+                runner.burning_left = true;
+                runner.burn_time = 0.0;
+                world_transform.translation.x = transform.snap(world_transform.translation).x;
+            } else if runner.wants_to_burn_right && start_burn(&tiles.below_right, &mut all_burnables) {
+                let mut fire = spawnables.fire_right.clone();
+                fire.transform.translation = transform.to_world(tiles.right.pos);
+                commands.spawn_bundle(fire);
+                runner.burning_right = true;
+                runner.burn_time = 0.0;
+                world_transform.translation.x = transform.snap(world_transform.translation).x;
+            }
+        }
+        // we're in a burn already, so don't do anything except tick a timer
+        else {
+            // clear any movement
+            movement.consume();
+
+            runner.burn_time += time.delta_seconds();
+            if runner.burn_time >= (10.0 / 22.0) {
+                runner.burning_left = false;
+                runner.burning_right = false;
+                runner.burn_time = 0.0;
+            }
         }
     }
 }
@@ -161,4 +206,5 @@ pub fn exit_gameplay(mut commands: Commands, to_despawn: Query<Entity, With<Leve
         commands.entity(entity).despawn_recursive();
     }
     commands.remove_resource::<LevelResource>();
+    commands.remove_resource::<SpawnableResources>();
 }

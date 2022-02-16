@@ -6,8 +6,18 @@ pub struct LocalPlayerInput {}
 
 #[derive(Component, Default, Clone)]
 pub struct Runner {
-    pub burn_left: bool,
-    pub burn_right: bool,
+    pub wants_to_burn_left: bool,
+    pub wants_to_burn_right: bool,
+
+    pub burning_left: bool,
+    pub burning_right: bool,
+    pub burn_time: f32,
+}
+
+impl Runner {
+    pub fn is_burning(&self) -> bool {
+        self.burning_left || self.burning_right
+    }
 }
 
 #[derive(Component, Default, Clone)]
@@ -177,6 +187,15 @@ pub struct SpriteAnimator {
 }
 
 impl SpriteAnimator {
+    pub fn new(starting_anim: &str) -> Self {
+        Self {
+            frame_index: 0,
+            animation_name: Some(starting_anim.to_owned()),
+            elapsed: 0.0,
+            active: true,
+        }
+    }
+
     pub fn switch(&mut self, anim: &str) {
         let new_anim = Some(anim.to_string());
         if new_anim != self.animation_name {

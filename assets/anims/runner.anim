@@ -22,12 +22,12 @@
 			"looping": true
 		},
 		"digRight": {
-			"frames": [15],
-			"looping": true
+			"frames": [15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 0],
+			"looping": false
 		},
 		"digLeft": {
-			"frames": [16],
-			"looping": true
+			"frames": [16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 3],
+			"looping": false
 		},
 		"fallRight": {
 			"frames": [8],

@@ -212,5 +212,19 @@ pub struct SpriteEffectBundle {
     pub visibility: Visibility,
     pub anim_data: Handle<AnimAsset>,
     pub sprite_anim: SpriteAnimator,
-    pub kill_after: DespawnAfter,
+    pub spawn_after: DespawnAfter,
+}
+
+impl SpriteEffectBundle {
+    pub fn new(texture: &Handle<TextureAtlas>, anim: &Handle<AnimAsset>, position: Vec3, starting_anim: &str) -> Self {
+        Self {
+            sprite: TextureAtlasSprite::new(0),
+            texture_atlas: texture.clone(),
+            anim_data: anim.clone(),
+            transform: Transform::from_scale(Vec3::splat(1.0)).with_translation(position),
+            spawn_after: DespawnAfter::new(0.5),
+            sprite_anim: SpriteAnimator::new(starting_anim),
+            ..Default::default()
+        }
+    }
 }

@@ -1,0 +1,13 @@
+{
+	"fps": 22,
+	"sequence": {
+		"left": {
+			"frames": [0, 1, 2, 2, 3, 4, 4, 5, 6, 6, 7],
+			"looping": false
+		},
+		"right": {
+			"frames": [18, 19, 20, 20, 21, 22, 22, 23, 24, 24, 25],
+			"looping": false
+		}
+	}
+}

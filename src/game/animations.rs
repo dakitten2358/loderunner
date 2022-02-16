@@ -3,21 +3,30 @@ use bevy::prelude::*;
 
 use super::{components::*, resources::LevelResource};
 
-pub fn animgraph_runner(level: Res<LevelResource>, mut runners: Query<(&Movement, &GridTransform, &mut SpriteAnimator), With<Runner>>) {
+pub fn animgraph_runner(
+    level: Res<LevelResource>,
+    mut runners: Query<(&Movement, &GridTransform, &Runner, &mut SpriteAnimator), With<Runner>>,
+) {
     use crate::game::resources::EffectiveTileType::*;
 
-    for (movement, transform, mut animator) in runners.iter_mut() {
+    for (movement, transform, runner, mut animator) in runners.iter_mut() {
         // initialized?
         if animator.animation_name == Option::None {
             animator.animation_name = Some("runRight".to_string());
         }
 
         // animations only active when we're moving, otherwise we stay at whatever frame we were at
-        animator.active = movement.velocity != Vec3::ZERO;
+        animator.active = movement.velocity != Vec3::ZERO || runner.is_burning();
         if animator.active {
             let tiles = level.around(transform.translation);
 
-            if movement.is_falling() {
+            if runner.is_burning() {
+                if runner.burning_left {
+                    animator.switch("digLeft")
+                } else {
+                    animator.switch("digRight")
+                }
+            } else if movement.is_falling() {
                 if movement.get_fall_direction() >= 0.0 {
                     animator.switch("fallRight")
                 } else {
