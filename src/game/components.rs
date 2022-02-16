@@ -169,14 +169,8 @@ impl Movement {
     }
 }
 
-#[derive(Component, Debug, Clone)]
+#[derive(Component, Debug, Clone, Default)]
 pub struct Falling {}
-
-impl Default for Falling {
-    fn default() -> Self {
-        Self {}
-    }
-}
 
 #[derive(Component, Debug, Clone)]
 pub struct SpriteAnimator {
