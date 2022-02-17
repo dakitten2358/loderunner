@@ -155,8 +155,10 @@ pub fn start_burns(
 fn start_burn(tile: &Tile, all_burnables: &mut Query<&mut Burnable>) -> bool {
     if let Some(ent) = tile.entity {
         if let Ok(mut burnable) = all_burnables.get_mut(ent) {
-            burnable.start_burn();
-            return true;
+            if !burnable.is_burning() {
+                burnable.start_burn();
+                return true;
+            }
         }
     }
     false

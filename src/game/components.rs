@@ -84,6 +84,10 @@ impl Burnable {
     pub fn set_state(&mut self, new_state: BurnState) {
         self.burn_state = new_state;
     }
+
+    pub fn is_burning(&self) -> bool {
+        self.burn_state != BurnState::NotBurning
+    }
 }
 
 impl Default for Burnable {
