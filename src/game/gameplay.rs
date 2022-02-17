@@ -253,5 +253,6 @@ pub fn exit_gameplay(mut commands: Commands, to_despawn: Query<Entity, With<Leve
         commands.entity(entity).despawn_recursive();
     }
     commands.remove_resource::<LevelResource>();
+    commands.remove_resource::<LevelState>();
     commands.remove_resource::<SpawnableResources>();
 }
