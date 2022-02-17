@@ -37,6 +37,7 @@ pub struct LevelResource {
     tiles: Vec<LevelTile>,
     width: i32,
     height: i32,
+    treasures: u32,
 }
 
 #[derive(Clone, Copy)]
@@ -77,6 +78,7 @@ impl LevelResource {
             tiles: vec![LevelTile { ..Default::default() }; size],
             width: level_asset.width,
             height: level_asset.height,
+            treasures: 0,
         };
 
         for tile in &level_asset.tiles {
@@ -86,6 +88,10 @@ impl LevelResource {
                 TileType::Ladder => EffectiveTileType::Ladder,
                 TileType::Rope => EffectiveTileType::Rope,
                 _ => EffectiveTileType::None,
+            };
+
+            if tile.behaviour == TileType::Gold {
+                new_resource.treasures += 1;
             }
         }
 
@@ -144,4 +150,14 @@ impl LevelResource {
     fn is_in_bounds(&self, pos: IVec2) -> bool {
         pos.x >= 0 && pos.x < self.width && pos.y >= 0 && pos.y < self.height
     }
+
+    pub fn treasure_count(&self) -> u32 {
+        self.treasures
+    }
+}
+
+#[derive(Default)]
+pub struct LevelState {
+    pub should_complete: bool,
+    pub completed: bool,
 }

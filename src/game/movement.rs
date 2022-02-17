@@ -213,3 +213,26 @@ fn useful_sign(num: f32) -> f32 {
         0.0
     }
 }
+
+pub fn build_overlaps(mut query: Query<(Entity, &Transform, &mut Overlaps)>) {
+    for (_, _, mut overlap) in query.iter_mut() {
+        overlap.entities.clear();
+    }
+
+    let mut combinations = query.iter_combinations_mut();
+    while let Some([(a_entity, a_transform, mut a_overlap), (b_entity, b_transform, mut b_overlap)]) = combinations.fetch_next() {
+        if is_overlapping((a_transform, &a_overlap), (b_transform, &b_overlap)) {
+            mark_overlap((a_entity, &mut a_overlap), (b_entity, &mut b_overlap))
+        }
+    }
+}
+
+fn is_overlapping(a: (&Transform, &Overlaps), b: (&Transform, &Overlaps)) -> bool {
+    is_range_overlapping(a.0.translation.x, b.0.translation.x, f32::min(a.1.width, b.1.width)).0
+        && is_range_overlapping(a.0.translation.y, b.0.translation.y, f32::min(a.1.height, b.1.height)).0
+}
+
+fn mark_overlap(a: (Entity, &mut Overlaps), b: (Entity, &mut Overlaps)) {
+    a.1.entities.push(b.0);
+    b.1.entities.push(a.0);
+}

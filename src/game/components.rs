@@ -20,6 +20,35 @@ impl Runner {
     }
 }
 
+#[derive(Component, Clone)]
+pub struct Overlaps {
+    pub entities: Vec<Entity>,
+    pub width: f32,
+    pub height: f32,
+}
+
+impl Default for Overlaps {
+    fn default() -> Self {
+        Self {
+            entities: Vec::new(),
+            height: 22.0,
+            width: 18.0, // width is normally 20, but we'll move it in a bit to ensure we don't accidentally overlap when in the column next to it
+        }
+    }
+}
+
+#[derive(Component, Clone)]
+pub struct GoldPickup {
+    pub count: u32,
+    pub max: u32,
+}
+
+impl Default for GoldPickup {
+    fn default() -> Self {
+        Self { count: 0, max: 1 }
+    }
+}
+
 #[derive(Component, Default, Clone)]
 pub struct Blocker {}
 
@@ -171,6 +200,9 @@ impl Movement {
 
 #[derive(Component, Debug, Clone, Default)]
 pub struct Falling {}
+
+#[derive(Component, Debug, Clone, Default)]
+pub struct HiddenLadder {}
 
 #[derive(Component, Debug, Clone)]
 pub struct SpriteAnimator {

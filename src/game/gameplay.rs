@@ -21,6 +21,7 @@ pub fn init_gameplay(
     let mut level = LevelResource::from_asset(level_data);
     spawn_level_entities(&mut commands, &core_assets, level_data, &animations, &mut level);
     commands.insert_resource(level);
+    commands.insert_resource(LevelState { ..Default::default() });
 
     let fire_atlas = &core_assets.hole_atlas;
     let fire_anim = &animations.get_handle("anims/fire.anim");
@@ -66,7 +67,7 @@ fn spawn_level_entities(
             TileType::FalseBrick => commands.spawn_bundle(FalseBrickBundle::new(tiles_atlas, pos)),
             TileType::Gold => commands.spawn_bundle(GoldBundle::new(tiles_atlas, pos)),
             TileType::Guard => commands.spawn_bundle(GuardBundle::new(guard_atlas, pos)),
-            TileType::HiddenLadder => commands.spawn_bundle(HiddenLadderBundle::new(tiles_atlas, pos)),
+            TileType::HiddenLadder => commands.spawn_bundle(HiddenLadderBundle::new(tiles_atlas, pos, level_offset)),
             TileType::Ladder => commands.spawn_bundle(LadderBundle::new(tiles_atlas, pos)),
             TileType::Player => commands.spawn_bundle(PlayerBundle::new(runner_atlas, runner_anim, pos, level_offset)),
             TileType::Rope => commands.spawn_bundle(RopeBundle::new(tiles_atlas, pos)),
@@ -188,6 +189,50 @@ pub fn apply_burnables(time: Res<Time>, mut level: ResMut<LevelResource>, mut qu
                 }
             }
             _ => burnable.burn_time = 0.0,
+        }
+    }
+}
+
+pub fn gold_pickups(
+    mut commands: Commands,
+    level: Res<LevelResource>,
+    mut state: ResMut<LevelState>,
+    mut players: Query<(&mut GoldPickup, &Overlaps)>,
+    treasures: Query<Entity>,
+) {
+    for (mut pickup, overlap) in players.iter_mut() {
+        for entity in &overlap.entities {
+            // make sure it's gold (overlap could be anything)
+            if let Ok(gold_entity) = treasures.get(*entity) {
+                // make sure we can pick it up
+                if pickup.count >= pickup.max {
+                    break;
+                }
+
+                // pick it up and destroy it
+                pickup.count += 1;
+                commands.entity(gold_entity).despawn_recursive();
+            }
+        }
+
+        if pickup.count >= level.treasure_count() {
+            state.should_complete = true;
+        }
+    }
+}
+
+pub fn completion(
+    mut state: ResMut<LevelState>,
+    mut level: ResMut<LevelResource>,
+    mut hidden_ladders: Query<(Entity, &mut Visibility, &GridTransform), With<HiddenLadder>>,
+) {
+    if state.should_complete && !state.completed {
+        state.completed = true;
+
+        for (hidden_ladder, mut ladder_visibility, transform) in hidden_ladders.iter_mut() {
+            ladder_visibility.is_visible = true;
+            level.set(transform.translation, EffectiveTileType::Ladder);
+            level.set_entity(transform.translation, hidden_ladder);
         }
     }
 }

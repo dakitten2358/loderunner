@@ -58,6 +58,7 @@ pub struct GoldBundle {
     pub transform: Transform,
     pub global_transform: GlobalTransform,
     pub visibility: Visibility,
+    pub overlap: Overlaps,
 }
 
 impl GoldBundle {
@@ -66,6 +67,10 @@ impl GoldBundle {
             sprite: TextureAtlasSprite::new(4),
             texture_atlas: texture.clone(),
             transform: Transform::from_scale(Vec3::splat(1.0)).with_translation(position),
+            overlap: Overlaps {
+                height: 11.0,
+                ..Default::default()
+            },
             ..Default::default()
         }
     }
@@ -99,14 +104,21 @@ pub struct HiddenLadderBundle {
     pub transform: Transform,
     pub global_transform: GlobalTransform,
     pub visibility: Visibility,
+    pub grid_transform: GridTransform,
+    pub hidden_ladder: HiddenLadder,
 }
 
 impl HiddenLadderBundle {
-    pub fn new(texture: &Handle<TextureAtlas>, position: Vec3) -> Self {
+    pub fn new(texture: &Handle<TextureAtlas>, position: Vec3, offset: Vec3) -> Self {
         Self {
             sprite: TextureAtlasSprite::new(2),
             texture_atlas: texture.clone(),
             transform: Transform::from_scale(Vec3::splat(1.0)).with_translation(position),
+            visibility: Visibility { is_visible: false },
+            grid_transform: GridTransform {
+                offset,
+                ..Default::default()
+            },
             ..Default::default()
         }
     }
@@ -145,6 +157,8 @@ pub struct PlayerBundle {
     pub anim_data: Handle<AnimAsset>,
     pub sprite_anim: SpriteAnimator,
     pub runner: Runner,
+    pub overlap: Overlaps,
+    pub pickup: GoldPickup,
 }
 
 impl PlayerBundle {
@@ -158,6 +172,10 @@ impl PlayerBundle {
                 ..Default::default()
             },
             anim_data: anim.clone(),
+            pickup: GoldPickup {
+                max: 99,
+                ..Default::default()
+            },
             ..Default::default()
         }
     }
