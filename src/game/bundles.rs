@@ -43,7 +43,7 @@ pub struct FalseBrickBundle {
 impl FalseBrickBundle {
     pub fn new(texture: &Handle<TextureAtlas>, position: Vec3) -> Self {
         Self {
-            sprite: TextureAtlasSprite::new(7),
+            sprite: TextureAtlasSprite::new(1), // 7 for editor
             texture_atlas: texture.clone(),
             transform: Transform::from_scale(Vec3::splat(1.0)).with_translation(position),
             ..Default::default()
@@ -111,7 +111,7 @@ pub struct HiddenLadderBundle {
 impl HiddenLadderBundle {
     pub fn new(texture: &Handle<TextureAtlas>, position: Vec3, offset: Vec3) -> Self {
         Self {
-            sprite: TextureAtlasSprite::new(2),
+            sprite: TextureAtlasSprite::new(5), // 2 for editor
             texture_atlas: texture.clone(),
             transform: Transform::from_scale(Vec3::splat(1.0)).with_translation(position),
             visibility: Visibility { is_visible: false },
