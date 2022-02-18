@@ -14,6 +14,18 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": []
+        },
+		{
+            "name": "(Windows) Launch Fullscreen",
+            "type": "cppvsdbg",
+            "preLaunchTask": "rust: cargo build",
+            "request": "launch",
+            "program": "${workspaceFolder}/target/debug/loderunner.exe",
+            "args": ["-fullscreen"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": []
         }
     ]
+
 }

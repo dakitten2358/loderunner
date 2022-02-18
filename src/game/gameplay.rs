@@ -86,7 +86,7 @@ fn spawn_level_entities(
 
     for x in 0..MAP_SIZE_WIDTH {
         let pos = Vec3::new(x as f32 * TILE_SIZE_WIDTH, (MAP_SIZE_HEIGHT + 1) as f32 * TILE_SIZE_HEIGHT, 0.0) + level_offset;
-        commands.spawn_bundle(VictoryTileBundle::new(pos));
+        commands.spawn_bundle(VictoryTileBundle::new(pos)).insert(LevelSpecificComponent);
     }
 }
 
@@ -135,14 +135,14 @@ pub fn start_burns(
             if runner.wants_to_burn_left && start_burn(&tiles.below_left, &mut all_burnables) {
                 let mut fire = spawnables.fire_left.clone();
                 fire.transform.translation = transform.to_world(tiles.left.pos);
-                commands.spawn_bundle(fire);
+                commands.spawn_bundle(fire).insert(LevelSpecificComponent);
                 runner.burning_left = true;
                 runner.burn_time = 0.0;
                 world_transform.translation.x = transform.snap(world_transform.translation).x;
             } else if runner.wants_to_burn_right && start_burn(&tiles.below_right, &mut all_burnables) {
                 let mut fire = spawnables.fire_right.clone();
                 fire.transform.translation = transform.to_world(tiles.right.pos);
-                commands.spawn_bundle(fire);
+                commands.spawn_bundle(fire).insert(LevelSpecificComponent);
                 runner.burning_right = true;
                 runner.burn_time = 0.0;
                 world_transform.translation.x = transform.snap(world_transform.translation).x;
