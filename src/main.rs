@@ -71,7 +71,7 @@ fn main() {
     if args.contains(&String::from("-window")) {
         window_descriptor.mode = bevy::window::WindowMode::Windowed;
     }
-    if args.contains(&String::from("-fulllscreen")) {
+    if args.contains(&String::from("-fullscreen")) {
         window_descriptor.mode = bevy::window::WindowMode::Fullscreen;
     }
 
