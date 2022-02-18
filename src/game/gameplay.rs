@@ -1,9 +1,12 @@
+use crate::assets::playlist_asset::PlaylistAsset;
 use crate::assets::AnimAsset;
 use crate::assets::LevelAsset::*;
 use crate::assets::LevelDataAsset;
+use crate::game::PlaylistState;
 use crate::game::{bundles::*, components::*, resources::*};
+use crate::AppStates;
 use crate::CoreAssets;
-use crate::{MAP_SIZE_HALF_WIDTH, TILE_SIZE_HEIGHT, TILE_SIZE_WIDTH};
+use crate::{MAP_SIZE_HALF_WIDTH, MAP_SIZE_HEIGHT, MAP_SIZE_WIDTH, TILE_SIZE_HEIGHT, TILE_SIZE_WIDTH};
 use bevy::prelude::*;
 
 pub struct SpawnableResources {
@@ -14,10 +17,13 @@ pub struct SpawnableResources {
 pub fn init_gameplay(
     mut commands: Commands,
     core_assets: Res<CoreAssets>,
+    playlist_state: Res<PlaylistState>,
     level_datas: Res<Assets<LevelDataAsset>>,
+    playlists: Res<Assets<PlaylistAsset>>,
     animations: Res<Assets<AnimAsset>>,
 ) {
-    let level_data = level_datas.get("levels/debug/debug.level").unwrap();
+    let level_path = playlist_state.current_level(&playlists);
+    let level_data = level_datas.get(level_path).unwrap();
     let mut level = LevelResource::from_asset(level_data);
     spawn_level_entities(&mut commands, &core_assets, level_data, &animations, &mut level);
     commands.insert_resource(level);
@@ -76,6 +82,11 @@ fn spawn_level_entities(
         .insert(LevelSpecificComponent)
         .id();
         level.set_entity(tile.position, tile_id);
+    }
+
+    for x in 0..MAP_SIZE_WIDTH {
+        let pos = Vec3::new(x as f32 * TILE_SIZE_WIDTH, (MAP_SIZE_HEIGHT + 1) as f32 * TILE_SIZE_HEIGHT, 0.0) + level_offset;
+        commands.spawn_bundle(VictoryTileBundle::new(pos));
     }
 }
 
@@ -235,6 +246,24 @@ pub fn completion(
             ladder_visibility.is_visible = true;
             level.set(transform.translation, EffectiveTileType::Ladder);
             level.set_entity(transform.translation, hidden_ladder);
+        }
+    }
+}
+
+pub fn next_level(
+    mut appstate: ResMut<State<AppStates>>,
+    mut playlist_state: ResMut<PlaylistState>,
+    playlists: Res<Assets<PlaylistAsset>>,
+    players: Query<&Overlaps, With<Runner>>,
+    victory_tiles: Query<Entity, With<Victory>>,
+) {
+    for player_overlap in players.iter() {
+        for overlapping_entity in &player_overlap.entities {
+            if victory_tiles.get(*overlapping_entity).is_ok() {
+                playlist_state.next_level(&playlists);
+                appstate.set(AppStates::ChangeLevel).expect("failed to change state");
+                break;
+            }
         }
     }
 }

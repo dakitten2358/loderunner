@@ -263,3 +263,6 @@ impl Default for DespawnAfter {
         DespawnAfter::new(1.0)
     }
 }
+
+#[derive(Component, Debug, Clone, Default)]
+pub struct Victory;

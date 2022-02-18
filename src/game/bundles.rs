@@ -246,3 +246,24 @@ impl SpriteEffectBundle {
         }
     }
 }
+
+#[derive(Bundle, Clone, Default)]
+pub struct VictoryTileBundle {
+    pub transform: Transform,
+    pub overlap: Overlaps,
+    pub vitory: Victory,
+}
+
+impl VictoryTileBundle {
+    pub fn new(position: Vec3) -> Self {
+        Self {
+            transform: Transform::from_scale(Vec3::splat(1.0)).with_translation(position),
+            overlap: Overlaps {
+                width: 18.0,
+                height: 22.0,
+                ..Default::default()
+            },
+            ..Default::default()
+        }
+    }
+}

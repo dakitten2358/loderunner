@@ -2,12 +2,15 @@ mod assets;
 mod camera;
 mod game;
 
+use assets::PlaylistAsset;
 use assets::{
     AnimAsset, AnimAssetPlugin, AssetLoading::ProgressCounter, AssetsLoading, LevelDataAsset, LevelDataAssetPlugin, LoadingPlugin,
+    PlaylistAssetPlugin,
 };
 use bevy::asset::Handle;
 use bevy::{asset::AssetServerSettings, prelude::*};
 use camera::*;
+use game::PlaylistState;
 use std::fmt::Debug;
 use std::hash::Hash;
 
@@ -26,6 +29,7 @@ impl<T: Component + Debug + Clone + Eq + Hash> BevyState for T {}
 pub enum AppStates {
     InitialLoading,
     Testing,
+    ChangeLevel,
 }
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone, SystemLabel)]
@@ -43,6 +47,7 @@ pub struct CoreAssets {
     pub hole_atlas: Handle<TextureAtlas>,
 
     pub map_handles: Vec<Handle<LevelDataAsset>>,
+    pub playlist_handles: Vec<Handle<PlaylistAsset>>,
     pub anim_handles: Vec<Handle<AnimAsset>>,
 }
 
@@ -82,6 +87,7 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugin(LevelDataAssetPlugin)
         .add_plugin(AnimAssetPlugin)
+        .add_plugin(PlaylistAssetPlugin)
         .add_plugin(ScalableOrthographicCameraPlugin)
         .add_plugin(LoadingPlugin {
             loading_state: InitialLoading,
@@ -95,8 +101,13 @@ fn main() {
                 .with_system(core_asset_loading_onenter),
         )
         .add_system_set(SystemSet::on_update(InitialLoading).with_system(core_asset_loading))
-        .add_system_set(SystemSet::on_exit(InitialLoading).with_system(core_asset_loading_onexit))
-        .add_plugin(game::GameplayPlugin { for_state: Testing });
+        .add_system_set(
+            SystemSet::on_exit(InitialLoading)
+                .with_system(core_asset_loading_onexit)
+                .with_system(core_asset_loading_setup_playlist),
+        )
+        .add_plugin(game::GameplayPlugin { for_state: Testing })
+        .add_system_set(SystemSet::on_enter(ChangeLevel).with_system(change_level));
 
     app_builder.run();
 }
@@ -158,6 +169,12 @@ fn load_core_assets(
         core_assets.map_handles.push(level_data_handle.typed());
     }
 
+    // load all the playlists
+    for playlist_data_handle in asset_server.load_folder("playlists").expect("failed ot load playlists") {
+        loading.add(&playlist_data_handle);
+        core_assets.playlist_handles.push(playlist_data_handle.typed());
+    }
+
     // load all the anims
     for anim_data_handle in asset_server.load_folder("anims").expect("fialed to load anims") {
         loading.add(&anim_data_handle);
@@ -205,4 +222,13 @@ fn core_asset_loading_onexit(mut commands: Commands, to_despawn: Query<Entity, W
     for entity in to_despawn.iter() {
         commands.entity(entity).despawn_recursive();
     }
+}
+
+fn core_asset_loading_setup_playlist(mut commands: Commands, playlists: Res<Assets<PlaylistAsset>>) {
+    let playlist_handle = playlists.get_handle("playlists/classic.playlist");
+    commands.insert_resource(PlaylistState::new(playlist_handle));
+}
+
+fn change_level(mut state: ResMut<State<AppStates>>) {
+    state.set(AppStates::Testing).expect("failed to return to game state");
 }

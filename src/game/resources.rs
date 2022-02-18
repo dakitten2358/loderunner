@@ -1,6 +1,9 @@
-use bevy::{math::IVec2, prelude::Entity};
+use bevy::{math::IVec2, prelude::*};
 
-use crate::assets::LevelAsset::{LevelDataAsset, TileType};
+use crate::assets::{
+    LevelAsset::{LevelDataAsset, TileType},
+    PlaylistAsset,
+};
 
 #[derive(Clone, Copy, PartialEq)]
 pub enum EffectiveTileType {
@@ -160,4 +163,28 @@ impl LevelResource {
 pub struct LevelState {
     pub should_complete: bool,
     pub completed: bool,
+}
+
+pub struct PlaylistState {
+    index: usize,
+    playlist_handle: Handle<PlaylistAsset>,
+}
+
+impl PlaylistState {
+    pub fn new(playlist: Handle<PlaylistAsset>) -> Self {
+        Self {
+            index: 0,
+            playlist_handle: playlist,
+        }
+    }
+
+    pub fn current_level<'a>(&self, playlists: &'a Res<Assets<PlaylistAsset>>) -> &'a str {
+        let playlist = playlists.get(&self.playlist_handle).unwrap();
+        playlist.levels[self.index].as_str()
+    }
+
+    pub fn next_level(&mut self, playlists: &Res<Assets<PlaylistAsset>>) {
+        let playlist = playlists.get(&self.playlist_handle).unwrap();
+        self.index = (self.index + 1) % playlist.levels.len();
+    }
 }

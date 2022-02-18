@@ -12,6 +12,7 @@ use crate::BevyState;
 use animations::{animate_sprites, animgraph_brick, animgraph_runner};
 use gameplay::*;
 use movement::{apply_falling, apply_movement, build_overlaps};
+pub use resources::PlaylistState;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, SystemLabel)]
 pub enum GameplaySystem {
@@ -44,7 +45,8 @@ impl<S: BevyState> Plugin for GameplayPlugin<S> {
                 .with_system(animgraph_brick.before(Animation).after(Movement))
                 .with_system(animate_sprites.label(Animation).after(Movement))
                 .with_system(pending_despawns.after(Input).after(Movement).after(Animation))
-                .with_system(completion.after(Input).after(Movement).after(Overlaps).after(Animation)),
+                .with_system(completion.after(Input).after(Movement).after(Overlaps).after(Animation))
+                .with_system(next_level.after(Input).after(Movement).after(Overlaps).after(Animation)),
         );
         app.add_system_set(SystemSet::on_exit(self.for_state.clone()).with_system(exit_gameplay));
     }
