@@ -234,7 +234,7 @@ pub fn gold_pickups(
     }
 }
 
-pub fn completion(
+pub fn show_exit_ladders(
     mut state: ResMut<LevelState>,
     mut level: ResMut<LevelResource>,
     mut hidden_ladders: Query<(Entity, &mut Visibility, &GridTransform), With<HiddenLadder>>,

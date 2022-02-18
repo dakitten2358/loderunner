@@ -45,7 +45,7 @@ impl<S: BevyState> Plugin for GameplayPlugin<S> {
                 .with_system(animgraph_brick.before(Animation).after(Movement))
                 .with_system(animate_sprites.label(Animation).after(Movement))
                 .with_system(pending_despawns.after(Input).after(Movement).after(Animation))
-                .with_system(completion.after(Input).after(Movement).after(Overlaps).after(Animation))
+                .with_system(show_exit_ladders.after(Input).after(Movement).after(Overlaps).after(Animation))
                 .with_system(next_level.after(Input).after(Movement).after(Overlaps).after(Animation)),
         );
         app.add_system_set(SystemSet::on_exit(self.for_state.clone()).with_system(exit_gameplay));
