@@ -31,7 +31,7 @@ impl Default for Overlaps {
     fn default() -> Self {
         Self {
             entities: Vec::new(),
-            height: 22.0,
+            height: 20.0,
             width: 18.0, // width is normally 20, but we'll move it in a bit to ensure we don't accidentally overlap when in the column next to it
         }
     }

@@ -85,7 +85,7 @@ fn spawn_level_entities(
     }
 
     for x in 0..MAP_SIZE_WIDTH {
-        let pos = Vec3::new(x as f32 * TILE_SIZE_WIDTH, (MAP_SIZE_HEIGHT + 1) as f32 * TILE_SIZE_HEIGHT, 0.0) + level_offset;
+        let pos = Vec3::new(x as f32 * TILE_SIZE_WIDTH, MAP_SIZE_HEIGHT as f32 * TILE_SIZE_HEIGHT, 0.0) + level_offset;
         commands.spawn_bundle(VictoryTileBundle::new(pos)).insert(LevelSpecificComponent);
     }
 }

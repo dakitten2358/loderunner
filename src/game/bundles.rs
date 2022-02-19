@@ -263,7 +263,7 @@ impl VictoryTileBundle {
             transform: Transform::from_scale(Vec3::splat(1.0)).with_translation(position),
             overlap: Overlaps {
                 width: 18.0,
-                height: 22.0,
+                height: 20.0,
                 ..Default::default()
             },
             ..Default::default()
