@@ -49,6 +49,9 @@ impl Default for GoldPickup {
     }
 }
 
+#[derive(Component, Debug, Clone, Default)]
+pub struct Treasure;
+
 #[derive(Component, Default, Clone)]
 pub struct Blocker {}
 
@@ -246,6 +249,12 @@ impl Default for SpriteAnimator {
         }
     }
 }
+
+#[derive(Component, Debug, Clone, Default)]
+pub struct Killable;
+
+#[derive(Component, Debug, Clone, Default)]
+pub struct Killed;
 
 #[derive(Component, Debug, Clone)]
 pub struct DespawnAfter {

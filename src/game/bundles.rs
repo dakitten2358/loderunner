@@ -13,6 +13,7 @@ pub struct BrickBundle {
     pub grid_transform: GridTransform,
     pub anim_data: Handle<AnimAsset>,
     pub sprite_anim: SpriteAnimator,
+    pub overlaps: Overlaps,
 }
 
 impl BrickBundle {
@@ -59,6 +60,7 @@ pub struct GoldBundle {
     pub global_transform: GlobalTransform,
     pub visibility: Visibility,
     pub overlap: Overlaps,
+    pub treasure: Treasure,
 }
 
 impl GoldBundle {
@@ -159,6 +161,7 @@ pub struct PlayerBundle {
     pub runner: Runner,
     pub overlap: Overlaps,
     pub pickup: GoldPickup,
+    pub killable: Killable,
 }
 
 impl PlayerBundle {

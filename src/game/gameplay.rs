@@ -175,10 +175,16 @@ fn start_burn(tile: &Tile, all_burnables: &mut Query<&mut Burnable>) -> bool {
     false
 }
 
-pub fn apply_burnables(time: Res<Time>, mut level: ResMut<LevelResource>, mut query: Query<(&mut Burnable, &GridTransform)>) {
+pub fn apply_burnables(
+    mut commands: Commands,
+    time: Res<Time>,
+    mut level: ResMut<LevelResource>,
+    mut query: Query<(&mut Burnable, &GridTransform, &Overlaps)>,
+    killables: Query<&Killable>,
+) {
     use BurnState::*;
 
-    for (mut burnable, transform) in query.iter_mut() {
+    for (mut burnable, transform, overlaps) in query.iter_mut() {
         burnable.burn_time += time.delta_seconds();
 
         match burnable.get_state() {
@@ -198,7 +204,12 @@ pub fn apply_burnables(time: Res<Time>, mut level: ResMut<LevelResource>, mut qu
                 if burnable.burn_time > 5.0 {
                     burnable.set_state(NotBurning);
                     level.set(transform.translation, EffectiveTileType::Blocker);
-                    //TODO(jm): kill stuff?  spawn killer here?
+
+                    for overlapping_entity in &overlaps.entities {
+                        if killables.get(*overlapping_entity).is_ok() {
+                            commands.entity(*overlapping_entity).insert(Killed {});
+                        }
+                    }
                 }
             }
             _ => burnable.burn_time = 0.0,
@@ -211,7 +222,7 @@ pub fn gold_pickups(
     level: Res<LevelResource>,
     mut state: ResMut<LevelState>,
     mut players: Query<(&mut GoldPickup, &Overlaps)>,
-    treasures: Query<Entity>,
+    treasures: Query<Entity, With<Treasure>>,
 ) {
     for (mut pickup, overlap) in players.iter_mut() {
         for entity in &overlap.entities {
@@ -251,7 +262,7 @@ pub fn show_exit_ladders(
 }
 
 pub fn next_level(
-    mut appstate: ResMut<State<AppStates>>,
+    mut app_state: ResMut<State<AppStates>>,
     mut playlist_state: ResMut<PlaylistState>,
     playlists: Res<Assets<PlaylistAsset>>,
     players: Query<&Overlaps, With<Runner>>,
@@ -261,10 +272,16 @@ pub fn next_level(
         for overlapping_entity in &player_overlap.entities {
             if victory_tiles.get(*overlapping_entity).is_ok() {
                 playlist_state.next_level(&playlists);
-                appstate.set(AppStates::ChangeLevel).expect("failed to change state");
+                app_state.set(AppStates::ChangeLevel).expect("failed to change state");
                 break;
             }
         }
+    }
+}
+
+pub fn restart_level(mut app_state: ResMut<State<AppStates>>, dead_players: Query<&Runner, With<Killed>>) {
+    if !dead_players.is_empty() {
+        app_state.set(AppStates::ChangeLevel).expect("failed to change state");
     }
 }
 
