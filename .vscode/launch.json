@@ -10,18 +10,18 @@
             "preLaunchTask": "rust: cargo build",
             "request": "launch",
             "program": "${workspaceFolder}/target/debug/loderunner.exe",
-            "args": ["-window"],
+            "args": ["-window", "-debug"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": []
         },
 		{
-            "name": "(Windows) Launch Fullscreen",
+            "name": "(Windows) Launch Borderless Fullscreen",
             "type": "cppvsdbg",
             "preLaunchTask": "rust: cargo build",
             "request": "launch",
             "program": "${workspaceFolder}/target/debug/loderunner.exe",
-            "args": ["-fullscreen"],
+            "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": []

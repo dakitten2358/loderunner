@@ -51,6 +51,23 @@ pub struct CoreAssets {
     pub anim_handles: Vec<Handle<AnimAsset>>,
 }
 
+#[derive(Clone)]
+pub struct StartupSettings {
+    window_mode: bevy::window::WindowMode,
+    playlist: String,
+    asset_directory: String,
+}
+
+impl Default for StartupSettings {
+    fn default() -> Self {
+        Self {
+            window_mode: bevy::window::WindowMode::BorderlessFullscreen,
+            playlist: "playlists/classic.playlist".to_owned(),
+            asset_directory: Default::default(),
+        }
+    }
+}
+
 #[derive(Component)]
 pub struct AnimationTimer(Timer);
 
@@ -67,21 +84,16 @@ fn main() {
         ..Default::default()
     };
 
-    let args: Vec<String> = std::env::args().collect();
-    if args.contains(&String::from("-window")) {
-        window_descriptor.mode = bevy::window::WindowMode::Windowed;
-    }
-    if args.contains(&String::from("-fullscreen")) {
-        window_descriptor.mode = bevy::window::WindowMode::Fullscreen;
-    }
+    let startup_settings = get_startup_settings();
+    window_descriptor.mode = startup_settings.window_mode;
 
-    let assets_directory = get_assets_directory();
     let mut app_builder = App::new();
     app_builder
+        .insert_resource(startup_settings.clone())
         .insert_resource(ClearColor(Color::rgb(0.0, 0.0, 0.0)))
         .insert_resource(window_descriptor)
         .insert_resource(AssetServerSettings {
-            asset_folder: assets_directory.into_os_string().into_string().unwrap(),
+            asset_folder: startup_settings.asset_directory,
         })
         .insert_resource(CoreAssets { ..Default::default() })
         .add_plugins(DefaultPlugins)
@@ -112,10 +124,29 @@ fn main() {
     app_builder.run();
 }
 
-fn get_assets_directory() -> std::path::PathBuf {
+fn get_startup_settings() -> StartupSettings {
+    let mut startup_settings = StartupSettings { ..Default::default() };
+    let args: Vec<String> = std::env::args().collect();
+
+    // asset dir
     let mut assets_dir = std::env::current_dir().expect("failed to get cwd");
     assets_dir.push("assets");
-    assets_dir
+    startup_settings.asset_directory = assets_dir.into_os_string().into_string().unwrap();
+
+    // window modes
+    if args.contains(&String::from("-window")) {
+        startup_settings.window_mode = bevy::window::WindowMode::Windowed;
+    }
+    if args.contains(&String::from("-fullscreen")) {
+        startup_settings.window_mode = bevy::window::WindowMode::Fullscreen;
+    }
+
+    // startup playlist
+    if args.contains(&String::from("-debug")) {
+        startup_settings.playlist = "playlists/debug.playlist".to_owned();
+    }
+
+    startup_settings
 }
 
 fn boot(mut commands: Commands) {
@@ -224,8 +255,12 @@ fn core_asset_loading_onexit(mut commands: Commands, to_despawn: Query<Entity, W
     }
 }
 
-fn core_asset_loading_setup_playlist(mut commands: Commands, playlists: Res<Assets<PlaylistAsset>>) {
-    let playlist_handle = playlists.get_handle("playlists/classic.playlist");
+fn core_asset_loading_setup_playlist(
+    mut commands: Commands,
+    startup_settings: Res<StartupSettings>,
+    playlists: Res<Assets<PlaylistAsset>>,
+) {
+    let playlist_handle = playlists.get_handle(startup_settings.playlist.as_str());
     commands.insert_resource(PlaylistState::new(playlist_handle));
 }
 
