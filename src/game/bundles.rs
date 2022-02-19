@@ -80,20 +80,29 @@ impl GoldBundle {
 
 #[derive(Bundle, Clone, Default)]
 pub struct GuardBundle {
+    pub guard: Guard,
     pub sprite: TextureAtlasSprite,
+    pub anim_data: Handle<AnimAsset>,
+    pub sprite_anim: SpriteAnimator,
     pub texture_atlas: Handle<TextureAtlas>,
     pub transform: Transform,
     pub global_transform: GlobalTransform,
     pub visibility: Visibility,
     pub movement: Movement,
+    pub grid_transform: GridTransform,
 }
 
 impl GuardBundle {
-    pub fn new(texture: &Handle<TextureAtlas>, position: Vec3) -> Self {
+    pub fn new(texture: &Handle<TextureAtlas>, anim: &Handle<AnimAsset>, position: Vec3, offset: Vec3) -> Self {
         Self {
             sprite: TextureAtlasSprite::new(0),
+            anim_data: anim.clone(),
             texture_atlas: texture.clone(),
             transform: Transform::from_scale(Vec3::splat(1.0)).with_translation(position),
+            grid_transform: GridTransform {
+                offset,
+                ..Default::default()
+            },
             ..Default::default()
         }
     }

@@ -7,8 +7,6 @@ pub fn animgraph_runner(
     level: Res<LevelResource>,
     mut runners: Query<(&Movement, &GridTransform, &Runner, &mut SpriteAnimator), With<Runner>>,
 ) {
-    use crate::game::resources::EffectiveTileType::*;
-
     for (movement, transform, runner, mut animator) in runners.iter_mut() {
         // initialized?
         if animator.animation_name == Option::None {
@@ -26,22 +24,8 @@ pub fn animgraph_runner(
                 } else {
                     animator.switch("digRight")
                 }
-            } else if movement.is_falling() {
-                if movement.get_fall_direction() >= 0.0 {
-                    animator.switch("fallRight")
-                } else {
-                    animator.switch("fallLeft")
-                }
-            } else if tiles.on.behaviour == Rope && movement.velocity.x > 0.0 {
-                animator.switch("ropeRight")
-            } else if tiles.on.behaviour == Rope && movement.velocity.x < 0.0 {
-                animator.switch("ropeLeft")
-            } else if movement.velocity.x > 0.0 {
-                animator.switch("runRight")
-            } else if movement.velocity.x < 0.0 {
-                animator.switch("runLeft")
-            } else if movement.velocity.y != 0.0 {
-                animator.switch("runUpDown")
+            } else {
+                animgraph_character_movement(movement, animator, tiles);
             }
         }
     }
@@ -57,6 +41,56 @@ pub fn animgraph_brick(mut query: Query<(&Burnable, &mut SpriteAnimator)>) {
             NotBurning => animator.switch("default"),
             _ => {}
         }
+    }
+}
+
+#[allow(clippy::type_complexity)]
+pub fn animgraph_guard(
+    level: Res<LevelResource>,
+    mut guards: Query<(&Movement, &GridTransform, Option<&Stunned>, &mut SpriteAnimator), With<Guard>>,
+) {
+    for (movement, transform, stunned, mut animator) in guards.iter_mut() {
+        // initialized?
+        if animator.animation_name == Option::None {
+            animator.animation_name = Some("runRight".to_string());
+        }
+
+        // animations only active when we're moving, otherwise we stay at whatever frame we were at
+        let is_stunned = stunned.is_some();
+        animator.active = movement.velocity != Vec3::ZERO || is_stunned;
+        if animator.active {
+            let tiles = level.around(transform.translation);
+            if is_stunned {
+                if movement.get_fall_direction() >= 0.0 {
+                    animator.switch("stunnedRight")
+                } else {
+                    animator.switch("stunnedLeft")
+                }
+            } else {
+                animgraph_character_movement(movement, animator, tiles);
+            }
+        }
+    }
+}
+
+fn animgraph_character_movement(movement: &Movement, mut animator: Mut<SpriteAnimator>, tiles: super::resources::TilesAround) {
+    use crate::game::resources::EffectiveTileType::*;
+    if movement.is_falling() {
+        if movement.get_fall_direction() >= 0.0 {
+            animator.switch("fallRight")
+        } else {
+            animator.switch("fallLeft")
+        }
+    } else if tiles.on.behaviour == Rope && movement.velocity.x > 0.0 {
+        animator.switch("ropeRight")
+    } else if tiles.on.behaviour == Rope && movement.velocity.x < 0.0 {
+        animator.switch("ropeLeft")
+    } else if movement.velocity.x > 0.0 {
+        animator.switch("runRight")
+    } else if movement.velocity.x < 0.0 {
+        animator.switch("runLeft")
+    } else if movement.velocity.y != 0.0 {
+        animator.switch("runUpDown")
     }
 }
 

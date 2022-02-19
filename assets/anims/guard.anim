@@ -1,0 +1,49 @@
+{
+	"fps": 22,
+	"sequence": {
+		"runRight": {
+			"frames": [0, 1, 2 ],
+			"looping": true
+		},
+		"runLeft": {
+			"frames": [3, 4, 5],
+			"looping": true
+		},
+		"runUpDown": {
+			"frames": [6, 7],
+			"looping": true
+		},
+		"ropeRight": {
+			"frames": [11, 12, 12, 13, 13],
+			"looping": true
+		},
+		"ropeLeft": {
+			"frames": [14, 15, 15, 16, 16],
+			"looping": true
+		},
+		"fallRight": {
+			"frames": [8],
+			"looping": true
+		},
+		"fallLeft": {
+			"frames": [19],
+			"looping": true
+		},
+		"respawn":{
+			"frames": [17, 17, 17, 17, 18, 18, 18],
+			"looping": false
+		},
+		"stunnedRight":{
+			"frames": [8, 8,  8,  8, 8, 8,  8,  8, 8, 8, 8, 8, 8,
+					   8, 8,  8,  8, 8, 8,  8,  8, 8, 8, 8, 8, 8,
+					   9, 9, 10, 10, 9, 9, 10, 10, 8, 8],
+			"looping": false
+		},
+		"shakeLeft": {
+			"frames": [19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19,
+					   19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19,
+					   20, 20, 21, 20, 20, 21, 21, 19, 19],
+			"looping": false
+		}
+	}
+}

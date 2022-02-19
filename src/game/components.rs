@@ -20,6 +20,9 @@ impl Runner {
     }
 }
 
+#[derive(Component, Debug, Default, Clone)]
+pub struct Guard;
+
 #[derive(Component, Clone)]
 pub struct Overlaps {
     pub entities: Vec<Entity>,
@@ -206,7 +209,10 @@ impl Movement {
 }
 
 #[derive(Component, Debug, Clone, Default)]
-pub struct Falling {}
+pub struct Falling;
+
+#[derive(Component, Debug, Clone, Default)]
+pub struct Stunned;
 
 #[derive(Component, Debug, Clone, Default)]
 pub struct HiddenLadder {}

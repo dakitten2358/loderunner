@@ -50,6 +50,7 @@ fn spawn_level_entities(
 ) {
     let tiles_atlas = &core_assets.tiles_atlas;
     let guard_atlas = &core_assets.guard_atlas;
+    let guard_anim = &animations.get_handle("anims/guard.anim");
     let hole_atlas = &core_assets.hole_atlas;
     let hole_anim = &animations.get_handle("anims/brick.anim");
     let runner_atlas = &core_assets.runner_atlas;
@@ -72,7 +73,7 @@ fn spawn_level_entities(
             TileType::Brick => commands.spawn_bundle(BrickBundle::new(hole_atlas, hole_anim, pos, level_offset)),
             TileType::FalseBrick => commands.spawn_bundle(FalseBrickBundle::new(tiles_atlas, pos)),
             TileType::Gold => commands.spawn_bundle(GoldBundle::new(tiles_atlas, pos)),
-            TileType::Guard => commands.spawn_bundle(GuardBundle::new(guard_atlas, pos)),
+            TileType::Guard => commands.spawn_bundle(GuardBundle::new(guard_atlas, guard_anim, pos, level_offset)),
             TileType::HiddenLadder => commands.spawn_bundle(HiddenLadderBundle::new(tiles_atlas, pos, level_offset)),
             TileType::Ladder => commands.spawn_bundle(LadderBundle::new(tiles_atlas, pos)),
             TileType::Player => commands.spawn_bundle(PlayerBundle::new(runner_atlas, runner_anim, pos, level_offset)),

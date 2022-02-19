@@ -106,11 +106,12 @@ pub fn apply_movement(
     }
 }
 
+#[allow(clippy::type_complexity)]
 pub fn apply_falling(
     mut commands: Commands,
     time: Res<Time>,
     level: Res<LevelResource>,
-    mut query: Query<(Entity, &mut Movement, &mut Transform, &GridTransform), With<Falling>>,
+    mut query: Query<(Entity, &mut Movement, &mut Transform, &GridTransform), (With<Falling>, With<Runner>)>,
 ) {
     use EffectiveTileType::*;
 
@@ -131,6 +132,53 @@ pub fn apply_falling(
                 desired_movement = 0.0;
                 movement.stop_falling();
                 commands.entity(entity).remove::<Falling>();
+            } else {
+                desired_movement = f32::min(movable_distance, desired_movement)
+            }
+        }
+
+        desired_position.y -= desired_movement;
+        desired_position.x += drift_towards(grid_transform.snap(desired_position).x, desired_position.x, delta_time * FALL_SPEED);
+
+        // feed velocity back into movement
+        movement.velocity = desired_position - transform.translation;
+        transform.translation = desired_position;
+    }
+}
+
+#[allow(clippy::type_complexity)]
+pub fn apply_falling_guard(
+    mut commands: Commands,
+    time: Res<Time>,
+    level: Res<LevelResource>,
+    mut query: Query<(Entity, &mut Movement, &mut Transform, &GridTransform), (With<Falling>, Without<Runner>)>,
+    bricks: Query<Entity, With<Burnable>>,
+) {
+    use EffectiveTileType::*;
+
+    let delta_time = time.delta().as_secs_f32();
+    for (entity, mut movement, mut transform, grid_transform) in query.iter_mut() {
+        let mut desired_position = transform.translation;
+        let tiles = level.around(grid_transform.translation);
+
+        movement.consume();
+
+        let mut desired_movement = delta_time * FALL_SPEED;
+        if (tiles.below.behaviour == Blocker || tiles.below.behaviour == Ladder)
+            || (tiles.on.behaviour == Rope && tiles.on.pos != movement.fall_start_pos())
+            || (tiles.on.entity.is_some() && bricks.get(tiles.on.entity.unwrap()).is_ok())
+        {
+            let blocking_tile_y = grid_transform.to_world(tiles.below.pos).y;
+            let (is_overlapping, movable_distance) = is_range_overlapping(blocking_tile_y, desired_position.y, TILE_SIZE_HEIGHT);
+            if is_overlapping {
+                desired_movement = 0.0;
+                movement.stop_falling();
+                commands.entity(entity).remove::<Falling>();
+
+                // mark it as stunned
+                if tiles.on.entity.is_some() && bricks.get(tiles.on.entity.unwrap()).is_ok() {
+                    commands.entity(entity).insert(Stunned {});
+                }
             } else {
                 desired_movement = f32::min(movable_distance, desired_movement)
             }
