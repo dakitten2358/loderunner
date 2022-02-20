@@ -269,6 +269,12 @@ pub fn build_overlaps(mut query: Query<(Entity, &Transform, &mut Overlaps)>) {
 
     let mut combinations = query.iter_combinations_mut();
     while let Some([(a_entity, a_transform, mut a_overlap), (b_entity, b_transform, mut b_overlap)]) = combinations.fetch_next() {
+        // if one of them is inactive, no overlap can occur
+        if !a_overlap.is_active || !b_overlap.is_active {
+            continue;
+        }
+
+        // are these overlapping?
         if is_overlapping((a_transform, &a_overlap), (b_transform, &b_overlap)) {
             mark_overlap((a_entity, &mut a_overlap), (b_entity, &mut b_overlap))
         }

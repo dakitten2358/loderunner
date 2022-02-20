@@ -28,6 +28,8 @@ pub struct Overlaps {
     pub entities: Vec<Entity>,
     pub width: f32,
     pub height: f32,
+
+    pub is_active: bool,
 }
 
 impl Default for Overlaps {
@@ -36,6 +38,7 @@ impl Default for Overlaps {
             entities: Vec::new(),
             height: 20.0,
             width: 18.0, // width is normally 20, but we'll move it in a bit to ensure we don't accidentally overlap when in the column next to it
+            is_active: true,
         }
     }
 }
