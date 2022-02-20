@@ -47,9 +47,9 @@ pub fn animgraph_brick(mut query: Query<(&Burnable, &mut SpriteAnimator)>) {
 #[allow(clippy::type_complexity)]
 pub fn animgraph_guard(
     level: Res<LevelResource>,
-    mut guards: Query<(&Movement, &GridTransform, Option<&Stunned>, &mut SpriteAnimator), With<Guard>>,
+    mut guards: Query<(&Movement, &GridTransform, Option<&Stunned>, &mut SpriteAnimator, &Respawnable), With<Guard>>,
 ) {
-    for (movement, transform, stunned, mut animator) in guards.iter_mut() {
+    for (movement, transform, stunned, mut animator, respawn) in guards.iter_mut() {
         // initialized?
         if animator.animation_name == Option::None {
             animator.animation_name = Some("runRight".to_string());
@@ -57,7 +57,7 @@ pub fn animgraph_guard(
 
         // animations only active when we're moving, otherwise we stay at whatever frame we were at
         let is_stunned = stunned.is_some();
-        animator.active = movement.velocity != Vec3::ZERO || is_stunned;
+        animator.active = movement.velocity != Vec3::ZERO || is_stunned || respawn.timer > 0.0;
         if animator.active {
             let tiles = level.around(transform.translation);
             if is_stunned {
@@ -66,6 +66,8 @@ pub fn animgraph_guard(
                 } else {
                     animator.switch("stunnedLeft")
                 }
+            } else if respawn.timer > 5.0 {
+                animator.switch("respawn")
             } else {
                 animgraph_character_movement(movement, animator, tiles);
             }
@@ -100,17 +102,22 @@ pub fn animate_sprites(
     mut animated_sprites: Query<(&mut TextureAtlasSprite, &mut SpriteAnimator, &Handle<AnimAsset>)>,
 ) {
     for (mut sprite, mut anim, anim_handle) in animated_sprites.iter_mut() {
-        if !anim.active {
-            continue;
-        }
-
         let anim_data = animations.get(anim_handle).unwrap();
         let frame_time = 1.0 / anim_data.fps;
 
         if let Some(animation_name) = &anim.animation_name {
             let anim_sequence = &anim_data.sequence[animation_name];
-            anim.elapsed += time.delta_seconds();
 
+            // always set the current frame, just in case we switched animations
+            sprite.index = anim_sequence.frames[anim.frame_index];
+
+            // if we're not active, don't run the current anim
+            if !anim.active {
+                continue;
+            }
+
+            // run frames until we've caught up
+            anim.elapsed += time.delta_seconds();
             while anim.elapsed > frame_time {
                 anim.frame_index = anim_sequence.next_frame(anim.frame_index);
                 anim.elapsed -= frame_time;

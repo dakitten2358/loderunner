@@ -280,6 +280,53 @@ pub fn next_level(
     }
 }
 
+#[allow(clippy::type_complexity)]
+pub fn start_guard_respawn(
+    mut commands: Commands,
+    level: Res<LevelResource>,
+    mut new_dead_guards: Query<(Entity, &mut Respawnable, &mut Visibility, &mut Transform, &mut Overlaps), (With<Guard>, Added<Killed>)>,
+) {
+    for (entity, mut respawn, mut visibility, mut transform, mut overlaps) in new_dead_guards.iter_mut() {
+        respawn.timer = 0.0;
+        respawn.position = level.get_random_respawn();
+
+        visibility.is_visible = false;
+        overlaps.is_active = false;
+        // probably don't need to move it, but let's do so anyways
+        transform.translation = Vec3::new(-100.0, -100.0, 0.0);
+        commands.entity(entity).remove::<Stunned>();
+    }
+}
+
+#[allow(clippy::type_complexity)]
+pub fn respawn_guard(
+    mut commands: Commands,
+    time: Res<Time>,
+    mut dead_guards: Query<
+        (
+            Entity,
+            &mut Respawnable,
+            &mut Visibility,
+            &mut Transform,
+            &mut Overlaps,
+            &GridTransform,
+        ),
+        (With<Guard>, With<Killed>),
+    >,
+) {
+    for (guard_entity, mut respawn, mut visibility, mut transform, mut overlaps, grid_transform) in dead_guards.iter_mut() {
+        respawn.timer += time.delta_seconds();
+        if respawn.timer > 5.5 {
+            overlaps.is_active = true;
+            respawn.timer = 0.0;
+            commands.entity(guard_entity).remove::<Killed>();
+        } else if respawn.timer > 5.0 {
+            visibility.is_visible = true;
+            transform.translation = grid_transform.to_world(respawn.position);
+        }
+    }
+}
+
 pub fn restart_level(mut app_state: ResMut<State<AppStates>>, dead_players: Query<&Runner, With<Killed>>) {
     if !dead_players.is_empty() {
         app_state.set(AppStates::ChangeLevel).expect("failed to change state");

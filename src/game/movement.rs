@@ -6,11 +6,12 @@ const HORIZONTAL_MOVEMENT_SPEED: f32 = TILE_SIZE_WIDTH * 7.0;
 const FALL_SPEED: f32 = TILE_SIZE_HEIGHT * 7.0;
 const CLIMB_SPEED: f32 = TILE_SIZE_HEIGHT * 7.0;
 
+#[allow(clippy::type_complexity)]
 pub fn apply_movement(
     mut commands: Commands,
     time: Res<Time>,
     level: Res<LevelResource>,
-    mut query: Query<(Entity, &mut Movement, &mut Transform, &GridTransform), Without<Falling>>,
+    mut query: Query<(Entity, &mut Movement, &mut Transform, &GridTransform), (Without<Falling>, Without<Killed>)>,
 ) {
     use EffectiveTileType::*;
 
@@ -151,7 +152,7 @@ pub fn apply_falling_guard(
     mut commands: Commands,
     time: Res<Time>,
     level: Res<LevelResource>,
-    mut query: Query<(Entity, &mut Movement, &mut Transform, &GridTransform), (With<Falling>, Without<Runner>)>,
+    mut query: Query<(Entity, &mut Movement, &mut Transform, &GridTransform), (With<Falling>, Without<Runner>, Without<Killed>)>,
     bricks: Query<Entity, With<Burnable>>,
 ) {
     use EffectiveTileType::*;

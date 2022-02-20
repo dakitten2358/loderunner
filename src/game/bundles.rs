@@ -90,6 +90,9 @@ pub struct GuardBundle {
     pub visibility: Visibility,
     pub movement: Movement,
     pub grid_transform: GridTransform,
+    pub killable: Killable,
+    pub respawnable: Respawnable,
+    pub overlap: Overlaps,
 }
 
 impl GuardBundle {

@@ -42,6 +42,8 @@ impl<S: BevyState> Plugin for GameplayPlugin<S> {
                 .with_system(apply_movement.label(Movement).after(Input))
                 .with_system(build_overlaps.label(Overlaps).after(Movement))
                 .with_system(gold_pickups.after(Overlaps))
+                .with_system(start_guard_respawn.after(Movement).before(Overlaps))
+                .with_system(respawn_guard.after(Movement).before(Overlaps))
                 .with_system(animgraph_runner.before(Animation).after(Movement))
                 .with_system(animgraph_guard.before(Animation).after(Movement))
                 .with_system(animgraph_brick.before(Animation).after(Movement))

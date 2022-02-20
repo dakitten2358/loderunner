@@ -30,7 +30,7 @@
 			"looping": true
 		},
 		"respawn":{
-			"frames": [17, 17, 17, 17, 18, 18, 18],
+			"frames": [17, 17, 17, 17, 17, 17, 18, 18, 18, 18, 0],
 			"looping": false
 		},
 		"stunnedRight":{

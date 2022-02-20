@@ -1,4 +1,6 @@
+use crate::{MAP_SIZE_HEIGHT, MAP_SIZE_WIDTH};
 use bevy::{math::IVec2, prelude::*};
+use rand::Rng;
 
 use crate::assets::{
     LevelAsset::{LevelDataAsset, TileType},
@@ -41,6 +43,7 @@ pub struct LevelResource {
     width: i32,
     height: i32,
     treasures: u32,
+    respawns: Vec<IVec2>,
 }
 
 #[derive(Clone, Copy)]
@@ -82,7 +85,12 @@ impl LevelResource {
             width: level_asset.width,
             height: level_asset.height,
             treasures: 0,
+            respawns: Vec::new(),
         };
+
+        for x in 0..MAP_SIZE_WIDTH {
+            new_resource.respawns.push(IVec2::new(x, MAP_SIZE_HEIGHT - 2))
+        }
 
         for tile in &level_asset.tiles {
             let index = new_resource.to_index(tile.position);
@@ -96,6 +104,8 @@ impl LevelResource {
             if tile.behaviour == TileType::Gold {
                 new_resource.treasures += 1;
             }
+
+            new_resource.respawns.retain(|p| *p != tile.position);
         }
 
         new_resource
@@ -156,6 +166,12 @@ impl LevelResource {
 
     pub fn treasure_count(&self) -> u32 {
         self.treasures
+    }
+
+    pub fn get_random_respawn(&self) -> IVec2 {
+        let mut rng = rand::thread_rng();
+        let index: usize = rng.gen_range(0..self.respawns.len());
+        self.respawns[index]
     }
 }
 

@@ -265,6 +265,12 @@ pub struct Killable;
 #[derive(Component, Debug, Clone, Default)]
 pub struct Killed;
 
+#[derive(Component, Debug, Clone, Default)]
+pub struct Respawnable {
+    pub timer: f32,
+    pub position: IVec2,
+}
+
 #[derive(Component, Debug, Clone)]
 pub struct DespawnAfter {
     pub time_remaining: f32,
