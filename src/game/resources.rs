@@ -1,5 +1,5 @@
 use crate::{MAP_SIZE_HEIGHT, MAP_SIZE_WIDTH};
-use bevy::{math::IVec2, prelude::*};
+use bevy::{math::IVec2, prelude::*, utils::HashMap};
 use rand::Rng;
 
 use crate::assets::{
@@ -44,6 +44,8 @@ pub struct LevelResource {
     height: i32,
     treasures: u32,
     respawns: Vec<IVec2>,
+
+    overrides: HashMap<IVec2, EffectiveTileType>,
 }
 
 #[derive(Clone, Copy)]
@@ -86,6 +88,7 @@ impl LevelResource {
             height: level_asset.height,
             treasures: 0,
             respawns: Vec::new(),
+            overrides: HashMap::default(),
         };
 
         for x in 0..MAP_SIZE_WIDTH {
@@ -139,7 +142,11 @@ impl LevelResource {
             return LevelTile::BLOCKER;
         }
 
-        self.tiles[self.to_index(pos)]
+        if self.overrides.contains_key(&pos) {
+            LevelTile::BLOCKER
+        } else {
+            self.tiles[self.to_index(pos)]
+        }
     }
 
     pub fn set(&mut self, pos: IVec2, effective_tile: EffectiveTileType) {
@@ -147,6 +154,16 @@ impl LevelResource {
             let index = self.to_index(pos);
             self.tiles[index].behaviour = effective_tile;
         }
+    }
+
+    pub fn set_override(&mut self, pos: IVec2, effective_tile: EffectiveTileType) {
+        if self.is_in_bounds(pos) {
+            self.overrides.insert(pos, effective_tile);
+        }
+    }
+
+    pub fn reset_override(&mut self, pos: IVec2) {
+        self.overrides.remove(&pos);
     }
 
     pub fn set_entity(&mut self, pos: IVec2, entity: Entity) {

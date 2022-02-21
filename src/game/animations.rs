@@ -66,7 +66,7 @@ pub fn animgraph_guard(
                 } else {
                     animator.switch("stunnedLeft")
                 }
-            } else if respawn.timer > 5.0 {
+            } else if respawn.timer > 2.0 {
                 animator.switch("respawn")
             } else {
                 animgraph_character_movement(movement, animator, tiles);

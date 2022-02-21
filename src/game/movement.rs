@@ -11,7 +11,7 @@ pub fn apply_movement(
     mut commands: Commands,
     time: Res<Time>,
     level: Res<LevelResource>,
-    mut query: Query<(Entity, &mut Movement, &mut Transform, &GridTransform), (Without<Falling>, Without<Killed>)>,
+    mut query: Query<(Entity, &mut Movement, &mut Transform, &GridTransform), (Without<Falling>, Without<Killed>, Without<Stunned>)>,
 ) {
     use EffectiveTileType::*;
 
@@ -151,7 +151,7 @@ pub fn apply_falling(
 pub fn apply_falling_guard(
     mut commands: Commands,
     time: Res<Time>,
-    level: Res<LevelResource>,
+    mut level: ResMut<LevelResource>,
     mut query: Query<(Entity, &mut Movement, &mut Transform, &GridTransform), (With<Falling>, Without<Runner>, Without<Killed>)>,
     bricks: Query<Entity, With<Burnable>>,
 ) {
@@ -179,6 +179,7 @@ pub fn apply_falling_guard(
                 // mark it as stunned
                 if tiles.on.entity.is_some() && bricks.get(tiles.on.entity.unwrap()).is_ok() {
                     commands.entity(entity).insert(Stunned {});
+                    level.set_override(grid_transform.translation, EffectiveTileType::Blocker);
                 }
             } else {
                 desired_movement = f32::min(movable_distance, desired_movement)
