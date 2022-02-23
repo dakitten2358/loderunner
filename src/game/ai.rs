@@ -1,8 +1,50 @@
 use crate::{game::resources::LevelResource, MAP_SIZE_HEIGHT, MAP_SIZE_WIDTH};
 use bevy::prelude::*;
 
-use super::resources::{EffectiveTileType, Tile};
+use super::{
+    components::{GridTransform, Runner},
+    movement::Movement,
+    resources::{EffectiveTileType, Tile},
+};
 use std::collections::HashMap;
+
+#[derive(Component, Debug, Default, Clone)]
+pub struct AiController;
+
+#[allow(clippy::comparison_chain)]
+pub fn run_ai_guards(mut guards: Query<(&GridTransform, &mut Movement), With<AiController>>, players: Query<&GridTransform, With<Runner>>) {
+    for (grid_transform, mut movement) in guards.iter_mut() {
+        let ai_pos = grid_transform.translation;
+        if let Some(runner_transform) = find_nearest_runner(grid_transform.translation, &players) {
+            let runner_pos = runner_transform.translation;
+
+            if runner_pos.x < ai_pos.x {
+                movement.add_move_left();
+            } else if runner_pos.x > ai_pos.x {
+                movement.add_move_right();
+            }
+
+            if runner_pos.y > ai_pos.y {
+                movement.add_move_up();
+            } else if runner_pos.y < ai_pos.y {
+                movement.add_move_down();
+            }
+        }
+    }
+}
+
+fn find_nearest_runner<'a>(to_position: IVec2, runners: &'a Query<&GridTransform, With<Runner>>) -> Option<&'a GridTransform> {
+    let distance = |t: &GridTransform| (t.translation - to_position).as_vec2().length();
+
+    let nearest_distance = f32::MAX;
+    let mut nearest_runner = None;
+    for transform in runners.iter() {
+        if distance(transform) < nearest_distance {
+            nearest_runner = Some(transform);
+        }
+    }
+    nearest_runner
+}
 
 #[derive(Debug, Default, Clone)]
 pub struct NavMesh {

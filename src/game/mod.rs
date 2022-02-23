@@ -10,6 +10,7 @@ mod gameplay;
 mod movement;
 
 use crate::BevyState;
+use ai::run_ai_guards;
 use animations::*;
 use gameplay::*;
 use movement::{apply_falling, apply_falling_guard, apply_movement, build_overlaps};
@@ -36,6 +37,7 @@ impl<S: BevyState> Plugin for GameplayPlugin<S> {
             SystemSet::on_update(self.for_state.clone())
                 .with_system(update_grid_transforms.before(Input))
                 .with_system(player_input.label(Input))
+                .with_system(run_ai_guards.after(Input).before(Movement))
                 .with_system(start_burns.after(Input).before(Movement))
                 .with_system(apply_burnables.after(Input).before(Movement))
                 .with_system(apply_falling.before(Movement).after(Input))

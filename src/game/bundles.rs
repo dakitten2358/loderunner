@@ -1,5 +1,7 @@
-use crate::{assets::AnimAsset, game::components::*};
+use crate::{assets::AnimAsset, game::components::*, TILE_SIZE_HEIGHT, TILE_SIZE_WIDTH};
 use bevy::prelude::*;
+
+use super::{ai::AiController, movement::Movement};
 
 #[derive(Bundle, Clone, Default)]
 pub struct BrickBundle {
@@ -93,6 +95,7 @@ pub struct GuardBundle {
     pub killable: Killable,
     pub respawnable: Respawnable,
     pub overlap: Overlaps,
+    pub ai: AiController,
 }
 
 impl GuardBundle {
@@ -106,6 +109,7 @@ impl GuardBundle {
                 offset,
                 ..Default::default()
             },
+            movement: Movement::new(TILE_SIZE_WIDTH * 4.0, TILE_SIZE_HEIGHT * 4.0),
             ..Default::default()
         }
     }
@@ -191,6 +195,7 @@ impl PlayerBundle {
                 max: 99,
                 ..Default::default()
             },
+            movement: Movement::new(TILE_SIZE_WIDTH * 5.0, TILE_SIZE_HEIGHT * 5.0),
             ..Default::default()
         }
     }

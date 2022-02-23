@@ -10,6 +10,9 @@ use crate::CoreAssets;
 use crate::{MAP_SIZE_HALF_WIDTH, MAP_SIZE_HEIGHT, MAP_SIZE_WIDTH, TILE_SIZE_HEIGHT, TILE_SIZE_WIDTH};
 use bevy::prelude::*;
 
+use super::movement::Falling;
+use super::movement::Movement;
+
 pub struct SpawnableResources {
     pub fire_left: SpriteEffectBundle,
     pub fire_right: SpriteEffectBundle,

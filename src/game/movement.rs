@@ -2,9 +2,101 @@ use crate::game::{components::*, resources::*};
 use crate::{TILE_SIZE_HEIGHT, TILE_SIZE_WIDTH};
 use bevy::prelude::*;
 
-const HORIZONTAL_MOVEMENT_SPEED: f32 = TILE_SIZE_WIDTH * 7.0;
 const FALL_SPEED: f32 = TILE_SIZE_HEIGHT * 7.0;
-const CLIMB_SPEED: f32 = TILE_SIZE_HEIGHT * 7.0;
+
+#[derive(Component, Default, Clone)]
+pub struct Movement {
+    move_left: bool,
+    move_right: bool,
+    move_up: bool,
+    move_down: bool,
+
+    is_falling: bool,
+    fall_direction: f32,
+    start_fall_position: IVec2,
+
+    pub horizontal_speed: f32,
+    pub climb_speed: f32,
+
+    pub velocity: Vec3,
+}
+
+impl Movement {
+    pub fn new(horizontal_speed: f32, climb_speed: f32) -> Self {
+        Self {
+            horizontal_speed,
+            climb_speed,
+            ..Default::default()
+        }
+    }
+
+    pub fn add_move_left(&mut self) {
+        self.move_left = true;
+    }
+
+    pub fn add_move_right(&mut self) {
+        self.move_right = true;
+    }
+
+    pub fn add_move_up(&mut self) {
+        self.move_up = true;
+    }
+
+    pub fn add_move_down(&mut self) {
+        self.move_down = true;
+    }
+
+    pub fn start_falling(&mut self, start_pos: IVec2, direction: f32) {
+        self.is_falling = true;
+        self.start_fall_position = start_pos;
+        self.fall_direction = direction;
+    }
+
+    pub fn is_falling(&self) -> bool {
+        self.is_falling
+    }
+
+    pub fn get_fall_direction(&self) -> f32 {
+        self.fall_direction
+    }
+
+    pub fn fall_start_pos(&self) -> IVec2 {
+        self.start_fall_position
+    }
+
+    pub fn stop_falling(&mut self) {
+        self.is_falling = false;
+    }
+
+    pub fn consume(&mut self) -> Vec2 {
+        let mut directions = Vec2::ZERO;
+
+        // horiz
+        if self.move_left && !self.move_right {
+            directions.x = -1.0;
+        } else if self.move_right && !self.move_left {
+            directions.x = 1.0;
+        }
+
+        // vert
+        if self.move_up && !self.move_down {
+            directions.y = 1.0;
+        } else if self.move_down && !self.move_up {
+            directions.y = -1.0;
+        }
+
+        self.move_left = false;
+        self.move_right = false;
+
+        self.move_up = false;
+        self.move_down = false;
+
+        directions
+    }
+}
+
+#[derive(Component, Debug, Clone, Default)]
+pub struct Falling;
 
 #[allow(clippy::type_complexity)]
 pub fn apply_movement(
@@ -33,7 +125,7 @@ pub fn apply_movement(
         // top of ladder?
         else if desired_direction.y > 0.0 && (tiles.on.behaviour == None || tiles.on.behaviour == Rope) && tiles.below.behaviour == Ladder
         {
-            let mut desired_movement = delta_time * CLIMB_SPEED;
+            let mut desired_movement = delta_time * movement.climb_speed;
             let blocking_tile_y = grid_transform.to_world(tiles.above.pos).y;
             let (_, movable_distance) = is_range_overlapping(blocking_tile_y, desired_position.y, TILE_SIZE_HEIGHT);
             desired_movement = f32::min(movable_distance, desired_movement);
@@ -42,7 +134,7 @@ pub fn apply_movement(
         }
         // trying to move up ladder, and _can_
         else if desired_direction.y > 0.0 && tiles.on.behaviour == Ladder {
-            let mut desired_movement = delta_time * CLIMB_SPEED;
+            let mut desired_movement = delta_time * movement.climb_speed;
 
             if tiles.above.behaviour == Blocker {
                 let blocking_tile_y = grid_transform.to_world(tiles.above.pos).y;
@@ -55,7 +147,7 @@ pub fn apply_movement(
                 desired_position.x += drift_towards(
                     grid_transform.snap(desired_position).x,
                     desired_position.x,
-                    delta_time * HORIZONTAL_MOVEMENT_SPEED,
+                    delta_time * movement.horizontal_speed,
                 );
             }
         }
@@ -64,7 +156,7 @@ pub fn apply_movement(
             && (tiles.on.behaviour == Ladder
                 || ((tiles.on.behaviour == None || tiles.on.behaviour == Rope) && tiles.below.behaviour == Ladder))
         {
-            let mut desired_movement = delta_time * -CLIMB_SPEED;
+            let mut desired_movement = delta_time * -movement.climb_speed;
             if tiles.below.behaviour == Blocker {
                 let blocking_tile_y = grid_transform.to_world(tiles.below.pos).y;
                 let (_, movable_distance) = is_range_overlapping(blocking_tile_y, desired_position.y, TILE_SIZE_HEIGHT);
@@ -76,14 +168,14 @@ pub fn apply_movement(
                 desired_position.x += drift_towards(
                     grid_transform.snap(desired_position).x,
                     desired_position.x,
-                    delta_time * HORIZONTAL_MOVEMENT_SPEED,
+                    delta_time * movement.horizontal_speed,
                 );
             }
         }
 
         // if we haven't moved up or down, let's try horizontal?
         if desired_position == transform.translation && desired_direction.x != 0.0 {
-            let mut desired_movement = delta_time * HORIZONTAL_MOVEMENT_SPEED * useful_sign(desired_direction.x);
+            let mut desired_movement = delta_time * movement.horizontal_speed * useful_sign(desired_direction.x);
             let relevant_tile = get_horizontal_tile_from_sign(desired_direction.x, &tiles);
             if relevant_tile.behaviour == Blocker {
                 let blocking_tile_x = grid_transform.to_world(relevant_tile.pos).x;
@@ -96,7 +188,7 @@ pub fn apply_movement(
                 desired_position.y += drift_towards(
                     grid_transform.snap(desired_position).y,
                     desired_position.y,
-                    delta_time * HORIZONTAL_MOVEMENT_SPEED,
+                    delta_time * movement.horizontal_speed,
                 );
             }
         }

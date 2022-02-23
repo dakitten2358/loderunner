@@ -1,7 +1,7 @@
 use crate::assets::AnimAsset;
 use bevy::prelude::*;
 
-use super::{components::*, resources::LevelResource};
+use super::{components::*, movement::Movement, resources::LevelResource};
 
 pub fn animgraph_runner(
     level: Res<LevelResource>,
