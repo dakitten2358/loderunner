@@ -2,6 +2,7 @@ use crate::assets::playlist_asset::PlaylistAsset;
 use crate::assets::AnimAsset;
 use crate::assets::LevelAsset::*;
 use crate::assets::LevelDataAsset;
+use crate::game::ai::{test_pathfind, NavMesh};
 use crate::game::PlaylistState;
 use crate::game::{bundles::*, components::*, resources::*};
 use crate::AppStates;
@@ -26,6 +27,9 @@ pub fn init_gameplay(
     let level_data = level_datas.get(level_path).unwrap();
     let mut level = LevelResource::from_asset(level_data);
     spawn_level_entities(&mut commands, &core_assets, level_data, &animations, &mut level);
+    let level_navmesh = NavMesh::from_level(&level);
+    test_pathfind(IVec2::new(1, 1), IVec2::new(1, 6), &level_navmesh);
+    commands.insert_resource(level_navmesh);
     commands.insert_resource(level);
     commands.insert_resource(LevelState { ..Default::default() });
 

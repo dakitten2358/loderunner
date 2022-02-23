@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 
+mod ai;
 mod bundles;
 mod components;
 mod resources;
