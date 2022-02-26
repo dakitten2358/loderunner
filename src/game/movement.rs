@@ -173,6 +173,29 @@ pub fn apply_movement(
             }
         }
 
+        let _on = tiles.on.behaviour;
+        let _below = tiles.below.behaviour;
+        let _is_on_ladder = _on == Ladder;
+        let _is_on_rope = _on == Rope;
+        let _is_on_non = _on == None;
+        let _is_on_none_or_rope = _is_on_non || _is_on_rope;
+        let _is_below_ladder = _below == Ladder;
+        println!(
+            "desired_direction.y[{}] < 0.0 && ({:?} == Ladder || (({:?} == None || {:?} == Rope) && {:?} == Ladder))",
+            desired_direction.y, _on, _on, _on, _below
+        );
+        println!(
+            "         {}              && ({} || (({} || {}) && {})) = {}",
+            desired_direction.y < 0.0,
+            _is_on_ladder,
+            _is_on_non,
+            _is_on_rope,
+            _is_below_ladder,
+            desired_direction.y < 0.0
+                && (tiles.on.behaviour == Ladder
+                    || ((tiles.on.behaviour == None || tiles.on.behaviour == Rope) && tiles.below.behaviour == Ladder))
+        );
+
         // if we haven't moved up or down, let's try horizontal?
         if desired_position == transform.translation && desired_direction.x != 0.0 {
             let mut desired_movement = delta_time * movement.horizontal_speed * useful_sign(desired_direction.x);
@@ -334,7 +357,10 @@ fn wants_to_drop_from_rope(desired_direction: Vec2, tiles: TilesAround) -> bool 
 
 fn drop_from_ladder_bottom(desired_direction: Vec2, tiles: TilesAround) -> bool {
     use EffectiveTileType::*;
-    desired_direction.y < 0.0 && (tiles.on.behaviour == None || tiles.on.behaviour == Rope) && tiles.above.behaviour == Ladder
+    desired_direction.y < 0.0
+        && (tiles.on.behaviour == None || tiles.on.behaviour == Rope)
+        && tiles.above.behaviour == Ladder
+        && tiles.below.behaviour != Ladder
 }
 
 fn is_range_overlapping(a: f32, b: f32, size: f32) -> (bool, f32) {

@@ -7,7 +7,7 @@ use crate::assets::{
     PlaylistAsset,
 };
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub enum EffectiveTileType {
     None,
     Blocker,

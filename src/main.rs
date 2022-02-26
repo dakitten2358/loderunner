@@ -45,6 +45,7 @@ pub struct CoreAssets {
     pub guard_atlas: Handle<TextureAtlas>,
     pub runner_atlas: Handle<TextureAtlas>,
     pub hole_atlas: Handle<TextureAtlas>,
+    pub debug_atlas: Handle<TextureAtlas>,
 
     pub map_handles: Vec<Handle<LevelDataAsset>>,
     pub playlist_handles: Vec<Handle<PlaylistAsset>>,
@@ -211,6 +212,13 @@ fn load_core_assets(
         loading.add(&anim_data_handle);
         core_assets.anim_handles.push(anim_data_handle.typed());
     }
+
+    // debug
+    let debug_texture_handle = asset_server.load("debug.png");
+    loading.add(&debug_texture_handle);
+    let debug_texture_atlas = TextureAtlas::from_grid(debug_texture_handle, Vec2::new(20.0, 22.0), 11, 2);
+    let debug_texture_atlas_handle = texture_atlases.add(debug_texture_atlas);
+    core_assets.debug_atlas = debug_texture_atlas_handle;
 }
 
 #[derive(Component)]

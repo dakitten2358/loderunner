@@ -96,6 +96,7 @@ pub struct GuardBundle {
     pub respawnable: Respawnable,
     pub overlap: Overlaps,
     pub ai: AiController,
+    pub gold_pickup: GoldPickup,
 }
 
 impl GuardBundle {
@@ -107,6 +108,15 @@ impl GuardBundle {
             transform: Transform::from_scale(Vec3::splat(1.0)).with_translation(position),
             grid_transform: GridTransform {
                 offset,
+                ..Default::default()
+            },
+            overlap: Overlaps {
+                width: 10.,
+                height: 11.,
+                ..Default::default()
+            },
+            gold_pickup: GoldPickup {
+                max: 1,
                 ..Default::default()
             },
             movement: Movement::new(TILE_SIZE_WIDTH * 4.0, TILE_SIZE_HEIGHT * 4.0),

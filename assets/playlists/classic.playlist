@@ -1,6 +1,15 @@
 {
 	"levels": [
 		"levels/classic/001.level",
-		"levels/classic/002.level"
+		"levels/classic/002.level",
+		"levels/classic/003.level",
+		"levels/classic/004.level",
+		"levels/classic/005.level",
+		"levels/classic/006.level",
+		"levels/classic/007.level",
+		"levels/classic/008.level",
+		"levels/classic/009.level",
+		"levels/classic/010.level",
+		"levels/classic/011.level"
 	]
 }

@@ -2,7 +2,7 @@ use crate::assets::playlist_asset::PlaylistAsset;
 use crate::assets::AnimAsset;
 use crate::assets::LevelAsset::*;
 use crate::assets::LevelDataAsset;
-use crate::game::ai::{test_pathfind, NavMesh};
+use crate::game::ai::NavMesh;
 use crate::game::PlaylistState;
 use crate::game::{bundles::*, components::*, resources::*};
 use crate::AppStates;
@@ -31,7 +31,7 @@ pub fn init_gameplay(
     let mut level = LevelResource::from_asset(level_data);
     spawn_level_entities(&mut commands, &core_assets, level_data, &animations, &mut level);
     let level_navmesh = NavMesh::from_level(&level);
-    test_pathfind(IVec2::new(1, 1), IVec2::new(1, 6), &level_navmesh);
+    //debug_navmesh(&mut commands, &core_assets, &level_navmesh);
     commands.insert_resource(level_navmesh);
     commands.insert_resource(level);
     commands.insert_resource(LevelState { ..Default::default() });
@@ -66,7 +66,7 @@ fn spawn_level_entities(
     let level_offset = Vec3::new(
         MAP_SIZE_HALF_WIDTH as f32 * TILE_SIZE_WIDTH * -1.0 + (TILE_SIZE_WIDTH / 2.0),
         TILE_SIZE_HEIGHT / 2.0,
-        0.0,
+        0.05,
     );
 
     for tile in &level_data.tiles {
@@ -341,6 +341,34 @@ pub fn respawn_guard(
         } else if respawn.timer > 2.0 {
             visibility.is_visible = true;
             transform.translation = grid_transform.to_world(respawn.position);
+        }
+    }
+}
+
+pub fn guard_drop_treasure(
+    mut commands: Commands,
+    core_assets: Res<CoreAssets>,
+    mut query: Query<(&GridTransform, &mut GoldPickup), Added<Stunned>>,
+) {
+    for (grid_transform, mut gold_pickup) in query.iter_mut() {
+        if gold_pickup.count > 0 {
+            let tiles_atlas = &core_assets.tiles_atlas;
+            let pos = grid_transform.to_world(grid_transform.translation + IVec2::new(0, 1));
+            commands
+                .spawn_bundle(GoldBundle::new(tiles_atlas, pos))
+                .insert(LevelSpecificComponent);
+            gold_pickup.count -= 1;
+        }
+    }
+}
+
+pub fn guard_kill_player(mut commands: Commands, players: Query<(Entity, &Overlaps), With<Runner>>, guards: Query<&Overlaps, With<Guard>>) {
+    for (player_entity, player_overlap) in players.iter() {
+        for overlapping_entity in &player_overlap.entities {
+            if guards.get(*overlapping_entity).is_ok() {
+                commands.entity(player_entity).insert(Killed {});
+                break;
+            }
         }
     }
 }

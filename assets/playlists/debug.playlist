@@ -1,5 +1,6 @@
 {
 	"levels": [
+		"levels/debug/debug_02.level",
 		"levels/debug/debug.level"
 	]
 }
