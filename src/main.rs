@@ -4,7 +4,7 @@ mod game;
 
 use assets::PlaylistAsset;
 use assets::{
-    AnimAsset, AnimAssetPlugin, AssetLoading::ProgressCounter, AssetsLoading, LevelDataAsset, LevelDataAssetPlugin, LoadingPlugin,
+    AnimAsset, AnimAssetPlugin, LevelDataAsset, LevelDataAssetPlugin,
     PlaylistAssetPlugin,
 };
 use bevy::asset::Handle;
@@ -13,6 +13,7 @@ use camera::*;
 use game::PlaylistState;
 use std::fmt::Debug;
 use std::hash::Hash;
+use iyes_progress::prelude::*;
 
 pub const TILE_SIZE_WIDTH: f32 = 20.0;
 pub const TILE_SIZE_HEIGHT: f32 = 22.0;
@@ -80,7 +81,6 @@ fn main() {
         title: "Loderunner".to_string(),
         width: 1280.,
         height: 720.,
-        vsync: true,
         mode: bevy::window::WindowMode::BorderlessFullscreen,
         ..Default::default()
     };
@@ -95,17 +95,18 @@ fn main() {
         .insert_resource(window_descriptor)
         .insert_resource(AssetServerSettings {
             asset_folder: startup_settings.asset_directory,
+            watch_for_changes: false,
         })
         .insert_resource(CoreAssets { ..Default::default() })
         .add_plugins(DefaultPlugins)
         .add_plugin(LevelDataAssetPlugin)
         .add_plugin(AnimAssetPlugin)
         .add_plugin(PlaylistAssetPlugin)
-        .add_plugin(ScalableOrthographicCameraPlugin)
-        .add_plugin(LoadingPlugin {
-            loading_state: InitialLoading,
-            next_state: Testing,
-        })
+        //.add_plugin(ScalableOrthographicCameraPlugin)
+        .add_plugin(ProgressPlugin::new(InitialLoading)
+            .continue_to(Testing)
+            .track_assets(),
+        )
         .add_state(InitialLoading)
         .add_startup_system(boot.label(Boot))
         .add_system_set(
@@ -151,7 +152,8 @@ fn get_startup_settings() -> StartupSettings {
 }
 
 fn boot(mut commands: Commands) {
-    commands.spawn_bundle(ScalableOrthographicCameraBundle::new(640.0, 360.0));
+    //commands.spawn_bundle(ScalableOrthographicCameraBundle::new(640.0, 360.0));
+    commands.spawn_bundle(Camera2dBundle::default());
 }
 
 fn load_core_assets(
@@ -170,6 +172,7 @@ fn load_core_assets(
         3,
         3,
         Vec2::new(TILE_PADDING_WIDTH, TILE_PADDING_HEIGHT),
+        Vec2::ZERO,
     );
     let texture_atlas_handle = texture_atlases.add(texture_atlas);
     core_assets.tiles_atlas = texture_atlas_handle;

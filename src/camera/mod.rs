@@ -41,9 +41,6 @@ impl ScalableOrthographicCameraBundle {
         );
         ScalableOrthographicCameraBundle {
             camera: Camera {
-                name: Some(CameraPlugin::CAMERA_2D.to_string()),
-                near: orthographic_projection.near,
-                far: orthographic_projection.far,
                 ..Default::default()
             },
             orthographic_projection,

@@ -27,7 +27,8 @@ pub fn init_gameplay(
     animations: Res<Assets<AnimAsset>>,
 ) {
     let level_path = playlist_state.current_level(&playlists);
-    let level_data = level_datas.get(level_path).unwrap();
+    let level_data_handle = level_datas.get_handle(level_path);
+    let level_data = level_datas.get(&level_data_handle).unwrap();
     let mut level = LevelResource::from_asset(level_data);
     spawn_level_entities(&mut commands, &core_assets, level_data, &animations, &mut level);
     let level_navmesh = NavMesh::from_level(&level);
